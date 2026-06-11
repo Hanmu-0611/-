@@ -7,6 +7,7 @@ API 키가 없어도 앱 실행, PDF 업로드, PDF 텍스트 추출, 출처 지
 ## 실행 방법
 
 최종 앱은 `multilingual_pdf_study_helper` 폴더 안에 있습니다.
+터미널을 열고 아래 명령어를 입력합니다.
 
 ```bash
 cd multilingual_pdf_study_helper
@@ -69,6 +70,6 @@ multilingual_pdf_study_helper/
   .env.example           환경변수 예시
 ```
 
-## 주의
+## 주의(개발자용)
 
 `.env`에는 실제 API 키가 들어갈 수 있으므로 커밋하지 않습니다. 제출 전에는 `git status`에서 `.env`, `streamlit.log`, `streamlit.err.log`가 커밋 대상에 들어가지 않는지 확인하세요.
