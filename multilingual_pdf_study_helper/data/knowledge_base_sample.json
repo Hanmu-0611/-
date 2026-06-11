@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Linear Independence",
+    "keywords": ["linear independence", "linearly independent", "선형독립", "线性无关"],
+    "content": "Linear Independence는 어떤 벡터가 다른 벡터들의 선형결합으로 표현되지 않는 성질이다. 벡터 집합에서 영벡터를 만드는 계수가 모두 0일 때 선형독립이라고 한다."
+  },
+  {
+    "title": "Basis",
+    "keywords": ["basis", "기저", "基", "基底"],
+    "content": "Basis는 공간을 span하면서 동시에 linearly independent인 벡터들의 집합이다. 기저를 알면 그 공간의 모든 벡터를 좌표로 표현할 수 있다."
+  },
+  {
+    "title": "Span",
+    "keywords": ["span", "linear span", "생성공간", "张成"],
+    "content": "Span은 주어진 벡터들의 모든 선형결합으로 만들 수 있는 벡터들의 집합이다. 어떤 벡터들이 공간 전체를 만들 수 있는지 확인할 때 사용한다."
+  },
+  {
+    "title": "Derivative",
+    "keywords": ["derivative", "differentiation", "미분", "导数"],
+    "content": "Derivative는 함수의 순간 변화율을 나타낸다. 그래프에서는 한 점에서의 접선의 기울기로 해석할 수 있다."
+  },
+  {
+    "title": "Time Complexity",
+    "keywords": ["time complexity", "big o", "시간복잡도", "时间复杂度"],
+    "content": "Time Complexity는 입력 크기가 커질 때 알고리즘 실행 시간이 어떻게 증가하는지 나타내는 개념이다. Big-O 표기법으로 자주 표현한다."
+  }
+]
