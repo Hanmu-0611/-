@@ -84,7 +84,11 @@ OPENROUTER_MODEL=
 
    - 한국어
    - 중국어
+   - English
+   - English + 한국어
+   - English + 중국어
    - 한국어 + 중국어
+   - English + 한국어 + 중국어
 
 3. 전공 용어 처리 방식을 선택합니다.
 

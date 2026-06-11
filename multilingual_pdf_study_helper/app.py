@@ -326,7 +326,15 @@ def main() -> None:
 
     target_language = st.selectbox(
         "설명 언어 선택",
-        ["한국어", "중국어", "한국어 + 중국어"],
+        [
+            "English",
+            "한국어",
+            "중국어",
+            "English + 한국어",
+            "English + 중국어",
+            "한국어 + 중국어",
+            "English + 한국어 + 중국어",
+        ],
     )
 
     term_mode = st.selectbox(
