@@ -26,6 +26,8 @@ http://localhost:8502
 python -m streamlit run app.py --server.port 8502
 ```
 
+api key가 입력이 잘 되었더라도 OpenRouter 연결 테스트에서 처음 몇번은 실패했다고 뜰 수 있습니다.
+
 ## API 키 설정
 
 `.env.example`을 참고해 프로젝트 폴더 안에 `.env` 파일을 만들고 값을 입력합니다.
