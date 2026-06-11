@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: pdf-knowledge-app
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python pdf_extract_server.py
+    autoDeploy: true
