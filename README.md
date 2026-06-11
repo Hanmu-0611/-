@@ -1,206 +1,72 @@
 # 다국어 PDF 지식베이스 학습 도우미 AI
 
-## 1. 프로젝트 소개
+외국어 강의자료 PDF를 업로드하면 PDF 텍스트를 추출하고, 샘플 지식베이스를 참고해 주요 개념, 공식/정의, 시험 핵심 내용, 상세 설명, 복습 문제, 다국어 용어 사전을 정리하는 Streamlit 앱입니다.
 
-외국어 강의자료 PDF를 업로드하면 PDF 내용을 추출하고, 지식베이스를 참고하여 핵심 개념, 공식, 상세 설명, 복습 문제, 다국어 용어 사전을 정리해주는 로컬 웹앱입니다.
+API 키가 없어도 앱 실행, PDF 업로드, PDF 텍스트 추출, 출처 지식베이스 생성, 로컬 분석 기능은 사용할 수 있습니다. OpenRouter 기반 AI 분석과 연결 테스트를 사용하려면 `.env` 파일에 실제 API 키를 입력해야 합니다.
 
-API Key 없이도 PDF 텍스트 추출, 출처 지식베이스 생성, 자동 지식베이스 검색, Markdown/JSON 다운로드를 사용할 수 있습니다. 생성형 AI 요약까지 사용하고 싶다면 `Ollama 로컬 AI` 또는 `OpenRouter 온라인 AI` 모드를 선택하면 됩니다.
+## 실행 방법
 
-단순 PDF 요약기가 아니라, 중요한 전공 용어를 영어 원어와 한국어/중국어 번역으로 함께 정리하여 원서나 외국어 강의자료 학습을 돕는 것이 특징입니다.
-
-## 2. 이 프로젝트의 차별점
-
-이 프로젝트는 단순히 PDF 내용을 짧게 요약하는 도구가 아니라, 외국어 강의자료를 공부하는 학생을 위한 다국어 학습 도우미입니다.
-
-전공 과목을 외국어 자료로 공부할 때는 내용을 이해하는 것뿐만 아니라 용어를 정확히 익히는 것이 중요합니다. 그래서 이 앱은 중요한 전공 용어를 무조건 번역하지 않고, `Linear Independence(선형독립)`, `Basis(기저)`, `Span(생성공간)`처럼 영어 원어와 한국어/중국어 번역을 함께 정리합니다.
-
-이를 통해 원서나 외국어 강의자료를 공부할 때 필요한 개념 이해와 용어 암기를 동시에 돕습니다.
-
-## 3. 빠른 실행 방법
-
-먼저 터미널에서 `app.py`와 `requirements.txt`가 있는 폴더로 이동합니다.
+최종 앱은 `multilingual_pdf_study_helper` 폴더 안에 있습니다.
 
 ```bash
 cd multilingual_pdf_study_helper
-```
-
-그 다음 아래 명령어를 실행합니다.
-
-```bash
 pip install -r requirements.txt
 streamlit run app.py --server.port 8502
 ```
 
-실행 후 브라우저에서 `http://localhost:8502` 주소로 접속합니다.
-
-만약 아래와 같은 오류가 나오면 현재 터미널 위치가 프로젝트 폴더가 아닌 것입니다.
+실행 후 브라우저에서 아래 주소로 접속합니다.
 
 ```text
-Could not open requirements file: requirements.txt
-File does not exist: app.py
+http://localhost:8502
 ```
 
-이 경우 다시 `cd multilingual_pdf_study_helper`를 실행한 뒤 설치/실행 명령어를 입력하세요.
-
-`streamlit` 명령어가 인식되지 않으면 아래 명령어를 사용해도 됩니다.
+`streamlit` 명령어가 인식되지 않으면 아래처럼 실행해도 됩니다.
 
 ```bash
 python -m streamlit run app.py --server.port 8502
 ```
 
-## 4. AI 모드 선택
+## API 키 설정
 
-앱 왼쪽 사이드바에서 분석 방식을 선택할 수 있습니다.
-
-```text
-로컬 분석만 사용 (API Key 없음)
-Ollama 로컬 AI 사용 (API Key 없음)
-OpenRouter 온라인 AI 사용
-```
-
-`로컬 분석만 사용`은 API Key가 전혀 필요 없습니다. PDF 추출, 출처 지식베이스, 자동 검색, 다운로드 기능을 바로 사용할 수 있습니다.
-
-`Ollama 로컬 AI 사용`도 API Key가 필요 없습니다. 대신 컴퓨터에 Ollama가 설치되어 있고 모델이 내려받아져 있어야 합니다.
-
-```bash
-ollama pull qwen2.5:7b
-```
-
-그 뒤 앱에서 `Ollama 연결 테스트`를 누른 뒤 분석하면 됩니다.
-
-`OpenRouter 온라인 AI 사용`은 인터넷과 OpenRouter API Key가 필요합니다.
-
-## 5. OpenRouter API 키 설정
-
-프로젝트 폴더에 기본 `.env` 파일을 미리 만들어두었습니다.
-
-실제로 수정해야 하는 파일은 `.env`입니다.
-
-생성된 `.env` 파일을 열고 아래 값만 수정하면 됩니다.
+`.env.example`을 참고해 프로젝트 폴더 안에 `.env` 파일을 만들고 값을 입력합니다.
 
 ```text
-OPENROUTER_API_KEY=API_키_입력
-OPENROUTER_MODEL=사용할_모델명_입력
+OPENROUTER_API_KEY=여기에_API_KEY_입력
+OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
 OLLAMA_MODEL=qwen2.5:7b
 ```
 
-평가 당일 교수님이 제공한 OpenRouter API 키와 모델명을 여기에 입력하면 됩니다.
+API 키가 없으면 `OPENROUTER_API_KEY=`처럼 비워두면 됩니다. 이 경우 OpenRouter 연결 테스트와 OpenRouter AI 분석은 실패 메시지를 보여주지만, 로컬 PDF 분석 기능은 계속 사용할 수 있습니다.
 
-모델명을 비워두면 기본 무료 모델을 사용합니다.
+## UI 언어
 
-```text
-OPENROUTER_API_KEY=
-OPENROUTER_MODEL=
-```
+앱 상단에서 사이트 언어를 선택할 수 있습니다.
 
-`.env` 파일은 기본 실행을 위해 함께 제공합니다. 실제 API 키를 넣은 상태로는 커밋하지 마세요.
+- 한국어
+- English
+- 中文
 
-## 6. 사용 방법
+설명 언어 선택에서도 각 언어 이름은 가능한 한 해당 언어로 표시됩니다. 예를 들어 중국어는 `中文`, 영어는 `English`로 표시됩니다.
 
-1. PDF 파일을 업로드합니다.
-2. 왼쪽 사이드바에서 AI 모드를 선택합니다.
-3. 설명 언어를 선택합니다.
+## 지식베이스 샘플
 
-   - 한국어
-   - 중국어
-   - English
-   - English + 한국어
-   - English + 중국어
-   - 한국어 + 중국어
-   - English + 한국어 + 중국어
+`multilingual_pdf_study_helper/data/knowledge_base_sample.json`은 앱이 PDF 내용과 비교할 기본 샘플 지식베이스입니다. `knowledge_base.py`가 이 파일을 읽어서 PDF와 관련 있는 항목을 자동 검색합니다.
 
-4. 전공 용어 처리 방식을 선택합니다.
+직접 만든 지식베이스로 바꾸고 싶다면 같은 JSON 구조로 항목을 수정하면 됩니다.
 
-   - 영어 원어 유지
-   - 영어 + 번역 병기
-   - 모두 번역
-
-5. OpenRouter 또는 Ollama를 선택했다면 사이드바의 연결 테스트 버튼으로 연결 상태를 확인합니다.
-6. `분석 시작` 버튼을 누릅니다.
-7. 분석 결과를 확인합니다.
-
-## 7. 주요 기능
-
-- PDF 텍스트 자동 추출
-- 이미지 기반 스캔 PDF OCR 보조 추출
-- 숫자/공식/수학 기호 정리 보정
-- PDF 페이지/문단 단위 출처 지식베이스 자동 생성
-- PDF 내용 기반 지식베이스 자동 검색
-- 사용자가 직접 키워드로 지식베이스 검색
-- 출처 지식베이스 검색 및 Markdown/JSON 다운로드
-- 지식베이스 기반 관련 개념 검색
-- API Key 없는 로컬 분석 모드
-- Ollama 기반 로컬 AI 분석 모드
-- OpenRouter API 기반 AI 분석
-- 주요 개념, 공식, 핵심 내용 정리
-- 다국어 용어 사전 생성
-- 복습 문제 생성
-- Ollama 연결 테스트 기능
-- OpenRouter 연결 테스트 기능
-
-## 8. 자주 발생하는 문제
-
-### API 키 오류가 나는 경우
-
-`.env` 파일이 있는지 확인하고, `OPENROUTER_API_KEY` 값이 제대로 입력되어 있는지 확인하세요.
-
-API Key 없이 쓰려면 왼쪽 사이드바에서 `로컬 분석만 사용 (API Key 없음)` 또는 `Ollama 로컬 AI 사용 (API Key 없음)`을 선택하세요.
-
-### Ollama 연결이 실패하는 경우
-
-Ollama 앱이 설치되어 있고 실행 중인지 확인하세요. 모델이 없다면 터미널에서 아래 명령어를 먼저 실행하세요.
-
-```bash
-ollama pull qwen2.5:7b
-```
-
-### PDF 텍스트를 추출할 수 없는 경우
-
-이미지 기반 스캔본 PDF일 수 있습니다. 현재 버전은 OCR을 시도합니다. OCR이 작동하지 않으면 `PyMuPDF`, `pytesseract`, `Pillow`, 그리고 Tesseract OCR 프로그램 설치 여부를 확인하세요.
-
-### AI 분석이 실패하는 경우
-
-OpenRouter API 키, 모델명, 인터넷 연결 상태를 확인해주세요. 웹페이지의 연결 테스트 버튼을 먼저 눌러보는 것을 권장합니다.
-
-## 9. 제한사항
-
-- 이미지 기반 스캔 PDF는 OCR 품질에 따라 인식률이 달라질 수 있습니다.
-- PDF가 너무 길면 일부 내용만 분석될 수 있습니다.
-- AI 응답은 사용하는 모델에 따라 달라질 수 있습니다.
-- OpenRouter AI 분석 기능은 인터넷 연결과 API Key가 필요합니다.
-- Ollama AI 분석 기능은 API Key가 필요 없지만 로컬 컴퓨터 성능과 설치된 모델에 영향을 받습니다.
-
-<details>
-<summary>파일 구조 자세히 보기</summary>
+## 주요 파일
 
 ```text
-app.py                 Streamlit 웹페이지 실행 파일
-analyzer.py            PDF 분석 전체 흐름 연결
-pdf_extractor.py       PDF 텍스트 추출
-ai_client.py           OpenRouter API 호출
-knowledge_base.py      지식베이스 검색
-safe_utils.py          안전한 값 변환과 예외처리 보조 함수
-data/                  샘플 지식베이스 저장 폴더
-requirements.txt       필요한 라이브러리 목록
-.env                   환경변수 설정 파일
+multilingual_pdf_study_helper/
+  app.py                 Streamlit 앱
+  analyzer.py            PDF 분석 흐름
+  ai_client.py           OpenRouter/Ollama 호출
+  pdf_extractor.py       PDF 텍스트 추출
+  knowledge_base.py      지식베이스 검색
+  data/knowledge_base_sample.json
+  .env.example           환경변수 예시
 ```
 
-</details>
+## 주의
 
-<details>
-<summary>지식베이스 교체 방법</summary>
-
-웹앱은 `knowledge_base.py`의 `search_knowledge_base(query_text, top_k=5)` 함수를 사용합니다.
-팀원이 만든 지식베이스를 연결하려면 이 함수가 아래와 같은 리스트를 반환하도록 맞추면 됩니다.
-
-```python
-[
-    {
-        "title": "Linear Independence",
-        "keywords": ["linear independence", "선형독립", "线性无关"],
-        "content": "Linear Independence는 벡터들이 서로 종속되지 않는 성질입니다."
-    }
-]
-```
-
-</details>
+`.env`에는 실제 API 키가 들어갈 수 있으므로 커밋하지 않습니다. 제출 전에는 `git status`에서 `.env`, `streamlit.log`, `streamlit.err.log`가 커밋 대상에 들어가지 않는지 확인하세요.

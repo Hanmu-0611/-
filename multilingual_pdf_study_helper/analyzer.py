@@ -5,12 +5,11 @@ from safe_utils import normalize_result, safe_string
 
 
 EMPTY_PDF_MESSAGE = (
-    "PDF에서 텍스트를 추출할 수 없습니다. "
-    "이미지 기반 스캔본 PDF이거나 텍스트가 포함되지 않은 PDF일 수 있습니다."
+    "PDF에서 텍스트를 추출할 수 없습니다. 이미지 기반 스캔 PDF이거나 "
+    "텍스트가 포함되지 않은 PDF일 수 있습니다."
 )
 AI_FAILURE_DETAILS = (
-    "AI 분석을 완료하지 못했습니다. "
-    "선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
+    "AI 분석을 완료하지 못했습니다. 선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
 )
 PDF_PREVIEW_LENGTH = 2000
 AI_PROVIDER_LABELS = {
@@ -30,14 +29,20 @@ def build_local_analysis_result(
     preview = safe_string(pdf_text)[:1200]
     key_points = []
     if knowledge_results:
-        key_points.append("PDF 내용과 관련된 지식베이스 항목을 자동으로 찾았습니다. / 已自动找到与 PDF 内容相关的知识库条目。")
-    key_points.append("아래의 PDF 텍스트 미리보기와 출처 지식베이스에서 원문 위치를 확인할 수 있습니다. / 可在下方 PDF 文本预览和出处知识库中查看原文位置。")
+        key_points.append(
+            "PDF 내용과 관련된 지식베이스 항목을 자동으로 찾았습니다. "
+            "AI 요약 없이도 아래 참고 항목과 PDF 출처 지식베이스를 확인할 수 있습니다."
+        )
+    key_points.append(
+        "OpenRouter API 키 없이 실행한 로컬 분석입니다. PDF 텍스트 추출, "
+        "자동 지식베이스 검색, 출처 지식베이스 생성은 사용할 수 있습니다."
+    )
 
     return normalize_result(
         {
             "title": "로컬 분석 결과",
             "concepts": [
-                f"{safe_string(item.get('title'))} / 中文参考"
+                safe_string(item.get("title"))
                 for item in knowledge_results
                 if isinstance(item, dict) and safe_string(item.get("title"))
             ][:6],
@@ -52,10 +57,9 @@ def build_local_analysis_result(
                 if isinstance(item, dict)
             ],
             "details": (
-                "API Key 없이 실행한 로컬 분석입니다. "
-                f"설명 언어 설정은 {safe_string(target_language)}, 용어 처리 설정은 {safe_string(term_mode)}입니다. "
-                "생성형 AI 요약은 하지 않았지만 PDF 추출, 자동 지식베이스 검색, 출처 사전, 다운로드 기능은 사용할 수 있습니다.\n"
-                "中文说明：这是无需 API Key 的本地分析。虽然不会生成完整 AI 总结，但可以使用 PDF 提取、自动知识库搜索、出处词典和下载功能。\n\n"
+                "API 키 없이 실행한 로컬 분석입니다. "
+                f"설명 언어 설정: {safe_string(target_language)}, "
+                f"용어 처리 설정: {safe_string(term_mode)}.\n\n"
                 f"[PDF 미리보기]\n{preview}"
             ),
             "glossary": [],
@@ -154,22 +158,6 @@ def analyze_pdf(
     normalized_result["ai_provider"] = provider
     normalized_result["ai_provider_label"] = AI_PROVIDER_LABELS.get(provider, "로컬 분석")
 
-    if "OPENROUTER_API_KEY" in safe_string(normalized_result.get("error")):
-        normalized_result.update(
-            {
-                "title": "로컬 분석 결과",
-                "warning": (
-                    "OpenRouter API Key가 없어 AI 요약은 건너뛰었습니다. "
-                    "PDF 텍스트 추출, 출처 지식베이스, 자동 지식베이스 검색은 정상적으로 사용할 수 있습니다."
-                ),
-                "error": "",
-                "details": (
-                    "AI 분석을 사용하려면 왼쪽 사이드바에서 OpenRouter API Key를 입력하고 저장한 뒤 다시 분석하세요. "
-                    "API Key 없이도 아래의 PDF 텍스트 추출 결과와 지식베이스 검색 결과를 확인할 수 있습니다."
-                ),
-            }
-        )
-
     if not normalized_result.get("knowledge_references") and knowledge_results:
         normalized_result["knowledge_references"] = [
             {
@@ -179,11 +167,5 @@ def analyze_pdf(
             for item in knowledge_results
             if isinstance(item, dict)
         ]
-
-    if normalized_result.get("error"):
-        normalized_result["warning"] = normalized_result.get("error")
-        normalized_result["error"] = ""
-        existing_details = safe_string(normalized_result.get("details"))
-        normalized_result["details"] = existing_details or AI_FAILURE_DETAILS
 
     return normalize_result(normalized_result)

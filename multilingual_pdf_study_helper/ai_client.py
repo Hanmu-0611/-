@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 import requests
 
 from safe_utils import normalize_result, safe_list, safe_string
@@ -55,10 +55,14 @@ def re_search_openrouter_key(value: str) -> str:
 
 
 def get_openrouter_api_key() -> str:
-    """Read the API key from .env and ignore placeholder values."""
-    load_dotenv(ENV_FILE, override=True)
-    api_key = normalize_openrouter_api_key(os.getenv("OPENROUTER_API_KEY"))
-    if api_key in API_KEY_PLACEHOLDERS:
+    """Read the API key from the project .env file only."""
+    if not ENV_FILE.exists():
+        return ""
+
+    env_values = dotenv_values(ENV_FILE)
+    api_key = normalize_openrouter_api_key(env_values.get("OPENROUTER_API_KEY", ""))
+    placeholders = API_KEY_PLACEHOLDERS | {"", "여기에_API_KEY_입력"}
+    if api_key in placeholders:
         return ""
     return api_key
 
@@ -69,8 +73,8 @@ def openrouter_key_looks_valid(api_key: str) -> bool:
 
 def get_current_model_info() -> dict[str, Any]:
     """Return the currently configured model and whether the default is used."""
-    load_dotenv(ENV_FILE, override=True)
-    raw_model = safe_string(os.getenv("OPENROUTER_MODEL")).strip()
+    env_values = dotenv_values(ENV_FILE) if ENV_FILE.exists() else {}
+    raw_model = safe_string(env_values.get("OPENROUTER_MODEL")).strip()
 
     if not raw_model or raw_model in MODEL_PLACEHOLDERS:
         return {
@@ -86,8 +90,8 @@ def get_current_model_info() -> dict[str, Any]:
 
 def get_ollama_model_info() -> dict[str, Any]:
     """Return the configured local Ollama model."""
-    load_dotenv(ENV_FILE, override=True)
-    raw_model = safe_string(os.getenv("OLLAMA_MODEL")).strip()
+    env_values = dotenv_values(ENV_FILE) if ENV_FILE.exists() else {}
+    raw_model = safe_string(env_values.get("OLLAMA_MODEL")).strip()
 
     if not raw_model or raw_model in MODEL_PLACEHOLDERS:
         return {

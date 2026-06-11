@@ -1,10 +1,13 @@
+venv/
 .venv/
 __pycache__/
 *.pyc
 knowledge_base.jsonl
 .env
-!multilingual_pdf_study_helper/.env
+streamlit.log
+streamlit.err.log
 **/.streamlit/*
 !**/.streamlit/
 !**/.streamlit/config.toml
+**/.streamlit/secrets.toml
 uploaded_files/

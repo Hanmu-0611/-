@@ -3,6 +3,6 @@ services:
     name: pdf-knowledge-app
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python pdf_extract_server.py
+    buildCommand: pip install -r multilingual_pdf_study_helper/requirements.txt
+    startCommand: cd multilingual_pdf_study_helper && python -m streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
     autoDeploy: true
