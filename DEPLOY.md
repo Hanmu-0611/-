@@ -6,6 +6,7 @@
 
 - `pdf_extract_server.py`：网站和后端接口，部署时运行这个文件
 - `requirements.txt`：Python 依赖
+- `apt.txt`：OCR 需要的 Tesseract 系统依赖
 - `Procfile`：Heroku/Railway 等平台可用
 - `render.yaml`：Render 部署配置
 
@@ -26,6 +27,22 @@ python pdf_extract_server.py
 ```
 
 5. 部署完成后，Render 会给你一个公开链接。别人打开这个链接就能使用。
+
+## OCR
+
+现在支持扫描版 PDF。系统会先尝试直接读取 PDF 文字；如果某一页没有可提取文字，就会自动使用 OCR。
+
+默认 OCR 语言：
+
+```text
+eng+chi_sim+kor
+```
+
+意思是英文、简体中文、韩文。如果只需要中文和英文，可以在部署平台环境变量里设置：
+
+```text
+OCR_LANGUAGES=eng+chi_sim
+```
 
 ## 接口
 

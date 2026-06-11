@@ -25,12 +25,22 @@ from urllib.parse import parse_qs, urlparse
 
 from pypdf import PdfReader
 
+try:
+    import fitz
+    import pytesseract
+    from PIL import Image
+except ImportError:
+    fitz = None
+    pytesseract = None
+    Image = None
+
 
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", "8000"))
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 UPLOAD_DIR = Path(tempfile.gettempdir()) / "pdf_extract_uploads"
 KNOWLEDGE_BASE_PATH = Path(__file__).with_name("knowledge_base.jsonl")
+OCR_LANGUAGES = os.environ.get("OCR_LANGUAGES", "eng+chi_sim+kor")
 
 APP_HTML = """<!doctype html>
 <html lang="zh-CN">
@@ -142,6 +152,7 @@ APP_HTML = """<!doctype html>
             <option value="organized">整理结果</option>
             <option value="knowledge">知识库出处</option>
             <option value="text">原始文本</option>
+            <option value="ocr">OCR 状态</option>
             <option value="json">JSON 数据</option>
           </select>
           <button id="extractButton">提交并整理</button>
@@ -190,6 +201,10 @@ APP_HTML = """<!doctype html>
         }
         if (viewMode.value === "text") {
           output.value = latestResult.text;
+          return;
+        }
+        if (viewMode.value === "ocr") {
+          output.value = JSON.stringify(latestResult.ocr, null, 2);
           return;
         }
         if (viewMode.value === "json") {
@@ -241,7 +256,8 @@ APP_HTML = """<!doctype html>
           const result = await extractPdfFromFile(input.files[0]);
           latestResult = result;
           renderResult();
-          meta.textContent = `文件：${result.filename}；页数：${result.page_count}；段落：${result.organized.paragraphs.length}；知识库条目：${result.knowledge_base.entry_count}`;
+          const ocrText = result.ocr.pages_used > 0 ? `；OCR页数：${result.ocr.pages_used}` : "";
+          meta.textContent = `文件：${result.filename}；页数：${result.page_count}；段落：${result.organized.paragraphs.length}；知识库条目：${result.knowledge_base.entry_count}${ocrText}`;
         } catch (error) {
           meta.textContent = error.message;
         } finally {
@@ -269,18 +285,52 @@ APP_HTML = """<!doctype html>
 """
 
 
+def normalize_pdf_text(text: str) -> str:
+    text = re.sub(r"[ \t]+\n", "\n", text or "")
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def ocr_page(path: Path, page_index: int) -> tuple[str, str]:
+    if fitz is None or pytesseract is None or Image is None:
+        return "", "OCR dependencies are not installed"
+
+    try:
+        with fitz.open(str(path)) as document:
+            page = document.load_page(page_index)
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+            image = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
+            text = pytesseract.image_to_string(image, lang=OCR_LANGUAGES)
+            return normalize_pdf_text(text), ""
+    except Exception as exc:
+        return "", str(exc)
+
+
 def extract_pdf(path: Path, filename: str) -> dict[str, Any]:
     reader = PdfReader(str(path))
     pages: list[dict[str, Any]] = []
+    ocr_pages_used = 0
+    ocr_errors: list[dict[str, Any]] = []
 
     for index, page in enumerate(reader.pages, start=1):
-        text = page.extract_text() or ""
-        text = re.sub(r"[ \t]+\n", "\n", text).strip()
+        text = normalize_pdf_text(page.extract_text() or "")
+        extraction_method = "pdf_text"
+
+        if len(text) < 20:
+            ocr_text, ocr_error = ocr_page(path, index - 1)
+            if ocr_text:
+                text = ocr_text
+                extraction_method = "ocr"
+                ocr_pages_used += 1
+            elif ocr_error:
+                ocr_errors.append({"page": index, "error": ocr_error})
+
         pages.append(
             {
                 "page": index,
                 "text": text,
                 "char_count": len(text),
+                "extraction_method": extraction_method,
             }
         )
 
@@ -297,6 +347,12 @@ def extract_pdf(path: Path, filename: str) -> dict[str, Any]:
         "text": full_text,
         "pages": pages,
         "organized": organized,
+        "ocr": {
+            "enabled": fitz is not None and pytesseract is not None and Image is not None,
+            "languages": OCR_LANGUAGES,
+            "pages_used": ocr_pages_used,
+            "errors": ocr_errors[:10],
+        },
         "knowledge_base": {
             "entry_count": len(knowledge_entries),
             "entries": knowledge_entries,
