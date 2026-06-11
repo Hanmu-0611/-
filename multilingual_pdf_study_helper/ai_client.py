@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -14,27 +15,34 @@ ENV_FILE = PROJECT_DIR / ".env"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "qwen/qwen3-next-80b-a3b-instruct:free"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
-DEFAULT_OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+DEFAULT_OLLAMA_MODEL = "qwen2.5:7b"
 MAX_TEXT_LENGTH = 12000
 OPENROUTER_TIMEOUT_SECONDS = 60
 OLLAMA_TIMEOUT_SECONDS = 180
 AI_FAILURE_DETAILS = (
-    "AI 분석을 완료하지 못했습니다. "
-    "선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
+    "AI 분석을 완료하지 못했습니다. 선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
 )
 API_KEY_PLACEHOLDERS = {
-    "your_api_key_here",
+    "",
     "여기에_API_KEY_입력",
+    "your_api_key_here",
     "your_openrouter_api_key",
 }
 MODEL_PLACEHOLDERS = {
+    "",
     "사용할_모델명_입력",
     "your_model_name",
     "your_model_here",
 }
 
 
-def normalize_openrouter_api_key(value: str) -> str:
+def get_project_env() -> dict[str, Any]:
+    if not ENV_FILE.exists():
+        return {}
+    return dict(dotenv_values(ENV_FILE))
+
+
+def normalize_openrouter_api_key(value: str | None) -> str:
     """Extract a usable OpenRouter key from pasted text."""
     raw_value = safe_string(value).strip().strip('"').strip("'")
     if raw_value.lower().startswith("bearer "):
@@ -48,21 +56,14 @@ def normalize_openrouter_api_key(value: str) -> str:
 
 
 def re_search_openrouter_key(value: str) -> str:
-    import re
-
-    match = re.search(r"sk-or-v1-[A-Za-z0-9_-]+", value)
+    match = re.search(r"sk-or-v1-[A-Za-z0-9_-]+", safe_string(value))
     return match.group(0) if match else ""
 
 
 def get_openrouter_api_key() -> str:
     """Read the API key from the project .env file only."""
-    if not ENV_FILE.exists():
-        return ""
-
-    env_values = dotenv_values(ENV_FILE)
-    api_key = normalize_openrouter_api_key(env_values.get("OPENROUTER_API_KEY", ""))
-    placeholders = API_KEY_PLACEHOLDERS | {"", "여기에_API_KEY_입력"}
-    if api_key in placeholders:
+    api_key = normalize_openrouter_api_key(get_project_env().get("OPENROUTER_API_KEY"))
+    if api_key in API_KEY_PLACEHOLDERS:
         return ""
     return api_key
 
@@ -72,11 +73,10 @@ def openrouter_key_looks_valid(api_key: str) -> bool:
 
 
 def get_current_model_info() -> dict[str, Any]:
-    """Return the currently configured model and whether the default is used."""
-    env_values = dotenv_values(ENV_FILE) if ENV_FILE.exists() else {}
-    raw_model = safe_string(env_values.get("OPENROUTER_MODEL")).strip()
+    """Return the currently configured OpenRouter model."""
+    raw_model = safe_string(get_project_env().get("OPENROUTER_MODEL")).strip()
 
-    if not raw_model or raw_model in MODEL_PLACEHOLDERS:
+    if raw_model in MODEL_PLACEHOLDERS:
         return {
             "model": DEFAULT_MODEL,
             "uses_default": True,
@@ -90,10 +90,9 @@ def get_current_model_info() -> dict[str, Any]:
 
 def get_ollama_model_info() -> dict[str, Any]:
     """Return the configured local Ollama model."""
-    env_values = dotenv_values(ENV_FILE) if ENV_FILE.exists() else {}
-    raw_model = safe_string(env_values.get("OLLAMA_MODEL")).strip()
+    raw_model = safe_string(get_project_env().get("OLLAMA_MODEL")).strip()
 
-    if not raw_model or raw_model in MODEL_PLACEHOLDERS:
+    if raw_model in MODEL_PLACEHOLDERS:
         return {
             "model": DEFAULT_OLLAMA_MODEL,
             "uses_default": True,
@@ -114,14 +113,19 @@ def get_empty_analysis(details: str = "") -> dict[str, Any]:
     )
 
 
-def ensure_chinese_output_language(target_language: str) -> str:
-    """Always include Chinese in generated study text."""
-    language = safe_string(target_language).strip()
-    if "중국어" in language or "Chinese" in language or "中文" in language:
-        return language or "중국어"
-    if language:
-        return f"{language} + 중국어"
-    return "중국어"
+def get_output_language_instruction(target_language: str) -> str:
+    """Return a clear language instruction without forcing extra languages."""
+    language = safe_string(target_language).strip() or "Korean"
+    language_map = {
+        "Korean": "Korean only",
+        "English": "English only",
+        "Chinese": "Chinese only",
+        "Korean + Chinese": "Korean and Chinese",
+        "English + Korean": "English and Korean",
+        "English + Chinese": "English and Chinese",
+        "English + Korean + Chinese": "English, Korean, and Chinese",
+    }
+    return language_map.get(language, language)
 
 
 def build_prompt(
@@ -131,7 +135,7 @@ def build_prompt(
     term_mode: str,
 ) -> str:
     short_pdf_text = safe_string(pdf_text)[:MAX_TEXT_LENGTH]
-    output_language = ensure_chinese_output_language(target_language)
+    output_language = get_output_language_instruction(target_language)
 
     try:
         knowledge_text = json.dumps(
@@ -143,59 +147,66 @@ def build_prompt(
         knowledge_text = "[]"
 
     return f"""
-당신은 외국어 강의자료를 분석해주는 다국어 학습 도우미입니다.
+You are a careful study assistant for lecture PDFs.
 
-사용자가 업로드한 PDF 내용을 바탕으로 분석해야 합니다.
-추가로 제공된 지식베이스 참고자료가 있으면 함께 사용하세요.
-설명 언어는 아래 output_language를 따르세요.
-중요: 사용자가 어떤 언어를 선택해도 번역/정리된 텍스트에는 반드시 중국어(中文)를 함께 포함하세요.
-개념, 공식 설명, 핵심 내용, 상세 설명, 복습 문제에는 중국어 번역 또는 중국어 설명을 함께 넣으세요.
-중국어만 단독으로 쓰지 말고, 선택 언어가 English 또는 한국어이면 선택 언어 + 中文 형태로 병기하세요.
-전공 용어 처리 방식은 사용자가 선택한 term_mode를 따르세요.
-중요한 전공 용어는 학습에 필요하므로 영어 원어와 번역을 적절히 고려하세요.
-예: Linear Independence(선형독립 / 线性无关), Basis(기저 / 基), Span(생성공간 / 张成空间), Rank(랭크 / 秩)
-PDF에 없는 내용을 과장해서 만들지 마세요.
-공식이 없다면 "특별히 추출된 공식은 없습니다."라고 작성하세요.
-숫자, 공식, 변수명, 첨자, 지수는 원문 의미를 최대한 보존하세요.
-예: x^2, a_1, A^{-1}, 2x + 3 = 7 같은 표현을 임의로 바꾸지 마세요.
-PDF 추출 과정에서 공식 일부가 불완전해 보이면 단정하지 말고 "원문 공식 확인 필요"라고 표시하세요.
-대학교 1학년이 이해할 수 있게 설명하세요.
-시험공부에 바로 사용할 수 있게 정리하세요.
+Analyze only the content supported by the uploaded PDF text and the optional knowledge-base references.
+Do not invent concepts, formulas, examples, or claims that are not supported by the PDF.
 
-반드시 아래 JSON 형식으로만 응답하세요.
-마크다운 코드블록은 사용하지 마세요.
+Output language:
+{output_language}
+
+Important language rules:
+- Use only the selected output language(s).
+- Do not add Chinese unless the selected output language includes Chinese.
+- If Korean only is selected, write Korean only.
+- If English only is selected, write English only.
+- If Chinese only is selected, write Chinese only.
+- In glossary items, leave fields for unselected languages empty.
+- The "english" glossary field may contain the original technical term only when useful for studying.
+
+Technical term handling:
+{safe_string(term_mode)}
+
+Accuracy rules:
+- Preserve numbers, formulas, variables, symbols, and notation as much as possible.
+- If a formula is unclear or incomplete in the extracted PDF text, say that the original formula needs checking.
+- If no formula is found, write that no formula was extracted.
+- Prefer concise, exam-useful explanations.
+- When knowledge-base references are provided, use them only when they are relevant to the PDF.
+
+Return JSON only. Do not use Markdown code fences.
 
 {{
-  "title": "문서 제목 또는 주제",
-  "concepts": ["주요 개념 1 / 中文概念 1", "주요 개념 2 / 中文概念 2"],
-  "formulas": ["공식 또는 정의 1 + 중국어 설명", "공식 또는 정의 2 + 中文说明"],
-  "key_points": ["핵심 내용 1 / 中文要点 1", "핵심 내용 2 / 中文要点 2"],
+  "title": "document title or topic",
+  "concepts": ["key concept 1", "key concept 2"],
+  "formulas": ["formula or definition 1", "formula or definition 2"],
+  "key_points": ["exam key point 1", "exam key point 2"],
   "knowledge_references": [
     {{
-      "title": "참고한 지식베이스 제목",
-      "content": "참고 내용"
+      "title": "reference title",
+      "content": "reference content"
     }}
   ],
-  "details": "상세 설명. 반드시 중국어 설명도 함께 포함하세요.",
+  "details": "detailed explanation",
   "glossary": [
     {{
       "english": "Linear Independence",
       "korean": "선형독립",
-      "chinese": "线性无关",
-      "explanation": "다른 벡터들의 선형결합으로 표현되지 않는 성질"
+      "chinese": "",
+      "explanation": "short explanation in the selected output language"
     }}
   ],
-  "quiz": ["복습 문제 1 / 中文复习题 1", "복습 문제 2 / 中文复习题 2"]
+  "quiz": ["review question 1", "review question 2"]
 }}
 
 target_language: {safe_string(target_language)}
 output_language: {output_language}
 term_mode: {safe_string(term_mode)}
 
-[PDF 텍스트]
+[PDF text]
 {short_pdf_text}
 
-[지식베이스 참고자료]
+[Knowledge-base references]
 {knowledge_text}
 """.strip()
 
@@ -242,7 +253,7 @@ def call_openrouter_ai(
             {
                 "error": (
                     "OPENROUTER_API_KEY가 설정되지 않았습니다. "
-                    "프로젝트 폴더에 .env 파일을 만들고 실제 API 키를 입력해주세요."
+                    ".env 파일에 실제 API 키를 입력해주세요."
                 ),
                 "details": AI_FAILURE_DETAILS,
             }
@@ -250,10 +261,7 @@ def call_openrouter_ai(
     if not openrouter_key_looks_valid(api_key):
         return normalize_result(
             {
-                "error": (
-                    "OPENROUTER_API_KEY 형식이 올바르지 않습니다. "
-                    "OpenRouter 키는 보통 sk-or-v1- 로 시작합니다."
-                ),
+                "error": "OPENROUTER_API_KEY 형식이 올바르지 않습니다. OpenRouter 키는 보통 sk-or-v1- 로 시작합니다.",
                 "details": AI_FAILURE_DETAILS,
             }
         )
@@ -317,10 +325,7 @@ def call_ollama_ai(
         return normalize_result(
             {
                 "error": f"Ollama 호출에 실패했습니다: {error}",
-                "details": (
-                    "Ollama가 설치되어 있고 실행 중인지 확인해주세요. "
-                    "예: ollama serve, ollama pull qwen2.5:7b"
-                ),
+                "details": "Ollama가 설치되어 있고 실행 중인지 확인해주세요. 예: ollama serve, ollama pull qwen2.5:7b",
             }
         )
 
@@ -328,7 +333,7 @@ def call_ollama_ai(
 
 
 def test_openrouter_connection() -> dict[str, Any]:
-    """Send a very small request to OpenRouter and report connection status."""
+    """Send a small request to OpenRouter and report connection status."""
     api_key = get_openrouter_api_key()
     model = get_current_model_info()["model"]
 
