@@ -74,3 +74,4 @@ multilingual_pdf_study_helper/
 ## 주의(개발자용)
 
 `.env`에는 실제 API 키가 들어갈 수 있으므로 커밋하지 않습니다. 제출 전에는 `git status`에서 `.env`, `streamlit.log`, `streamlit.err.log`가 커밋 대상에 들어가지 않는지 확인하세요.
+2명이서 작업했기에 내용이 조금 부실할 수 있습니다..
