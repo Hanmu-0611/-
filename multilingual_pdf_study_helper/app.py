@@ -5,7 +5,13 @@ import json
 import streamlit as st
 
 from analyzer import analyze_pdf
-from ai_client import get_current_model_info, get_openrouter_api_key, test_openrouter_connection
+from ai_client import (
+    get_current_model_info,
+    get_openrouter_api_key,
+    normalize_openrouter_api_key,
+    openrouter_key_looks_valid,
+    test_openrouter_connection,
+)
 from knowledge_base import search_knowledge_base
 from safe_utils import normalize_result, safe_list, safe_string
 
@@ -47,11 +53,13 @@ def ensure_env_file() -> None:
 
 def save_openrouter_settings(api_key: str, model_name: str) -> bool:
     """Save OpenRouter settings to the local .env file."""
+    normalized_key = normalize_openrouter_api_key(api_key)
+
     try:
         ENV_FILE.write_text(
             "\n".join(
                 [
-                    f"OPENROUTER_API_KEY={safe_string(api_key).strip()}",
+                    f"OPENROUTER_API_KEY={normalized_key}",
                     f"OPENROUTER_MODEL={safe_string(model_name).strip()}",
                     "",
                 ]
@@ -343,7 +351,10 @@ def show_openrouter_status_sidebar() -> None:
     st.sidebar.write(f"현재 AI 모델: {model_name}")
 
     if current_key:
-        st.sidebar.success("API Key가 설정되어 있습니다.")
+        if openrouter_key_looks_valid(current_key):
+            st.sidebar.success("API Key가 설정되어 있습니다.")
+        else:
+            st.sidebar.error("저장된 API Key 형식이 OpenRouter 형식이 아닙니다.")
     else:
         st.sidebar.warning("API Key가 없어 AI 요약은 건너뛰고 로컬 분석만 사용합니다.")
 
@@ -359,6 +370,9 @@ def show_openrouter_status_sidebar() -> None:
         )
         if st.button("API 설정 저장"):
             key_to_save = api_key_input.strip() or current_key
+            if key_to_save and not openrouter_key_looks_valid(normalize_openrouter_api_key(key_to_save)):
+                st.sidebar.error("OpenRouter API Key는 보통 sk-or-v1- 로 시작합니다. 다시 확인해주세요.")
+                return
             if save_openrouter_settings(key_to_save, model_input):
                 st.sidebar.success("저장했습니다. 다시 분석을 실행해주세요.")
 

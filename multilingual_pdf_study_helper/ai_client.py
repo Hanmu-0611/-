@@ -5,6 +5,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 import openai
+import requests
 
 from safe_utils import normalize_result, safe_list, safe_string
 
@@ -31,13 +32,37 @@ MODEL_PLACEHOLDERS = {
 }
 
 
+def normalize_openrouter_api_key(value: str) -> str:
+    """Extract a usable OpenRouter key from pasted text."""
+    raw_value = safe_string(value).strip().strip('"').strip("'")
+    if raw_value.lower().startswith("bearer "):
+        raw_value = raw_value[7:].strip()
+
+    key_match = re_search_openrouter_key(raw_value)
+    if key_match:
+        return key_match
+
+    return raw_value
+
+
+def re_search_openrouter_key(value: str) -> str:
+    import re
+
+    match = re.search(r"sk-or-v1-[A-Za-z0-9_-]+", value)
+    return match.group(0) if match else ""
+
+
 def get_openrouter_api_key() -> str:
     """Read the API key from .env and ignore placeholder values."""
     load_dotenv(ENV_FILE, override=True)
-    api_key = safe_string(os.getenv("OPENROUTER_API_KEY")).strip()
+    api_key = normalize_openrouter_api_key(os.getenv("OPENROUTER_API_KEY"))
     if api_key in API_KEY_PLACEHOLDERS:
         return ""
     return api_key
+
+
+def openrouter_key_looks_valid(api_key: str) -> bool:
+    return bool(re_search_openrouter_key(api_key))
 
 
 def get_current_model_info() -> dict[str, Any]:
@@ -184,6 +209,16 @@ def call_openrouter_ai(
                 "details": AI_FAILURE_DETAILS,
             }
         )
+    if not openrouter_key_looks_valid(api_key):
+        return normalize_result(
+            {
+                "error": (
+                    "OPENROUTER_API_KEY 형식이 올바르지 않습니다. "
+                    "OpenRouter 키는 보통 sk-or-v1- 로 시작합니다."
+                ),
+                "details": AI_FAILURE_DETAILS,
+            }
+        )
 
     try:
         prompt = build_prompt(
@@ -223,6 +258,11 @@ def test_openrouter_connection() -> dict[str, Any]:
             "success": False,
             "message": "OPENROUTER_API_KEY가 설정되지 않았습니다.",
         }
+    if not openrouter_key_looks_valid(api_key):
+        return {
+            "success": False,
+            "message": "API Key 형식이 올바르지 않습니다. OpenRouter 키는 보통 sk-or-v1- 로 시작합니다.",
+        }
 
     try:
         response_text = request_chat_completion(
@@ -255,7 +295,7 @@ def request_chat_completion(
     prompt: str,
     max_tokens: int | None = None,
 ) -> str:
-    """Call OpenRouter with either the modern or legacy OpenAI Python package."""
+    """Call OpenRouter with an explicit Authorization header."""
     messages = [
         {
             "role": "system",
@@ -263,34 +303,32 @@ def request_chat_completion(
         },
         {"role": "user", "content": prompt},
     ]
-
-    if hasattr(openai, "OpenAI"):
-        client = openai.OpenAI(
-            api_key=api_key,
-            base_url=OPENROUTER_BASE_URL,
-            timeout=OPENROUTER_TIMEOUT_SECONDS,
-        )
-        request_kwargs = {
-            "model": model,
-            "messages": messages,
-            "temperature": 0.2,
-        }
-        if max_tokens is not None:
-            request_kwargs["max_tokens"] = max_tokens
-
-        response = client.chat.completions.create(**request_kwargs)
-        return safe_string(response.choices[0].message.content)
-
-    openai.api_key = api_key
-    openai.api_base = OPENROUTER_BASE_URL
-    request_kwargs = {
+    payload = {
         "model": model,
         "messages": messages,
         "temperature": 0.2,
-        "request_timeout": OPENROUTER_TIMEOUT_SECONDS,
     }
     if max_tokens is not None:
-        request_kwargs["max_tokens"] = max_tokens
+        payload["max_tokens"] = max_tokens
 
-    response = openai.ChatCompletion.create(**request_kwargs)
-    return safe_string(response["choices"][0]["message"]["content"])
+    response = requests.post(
+        f"{OPENROUTER_BASE_URL}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:8501",
+            "X-Title": "Multilingual PDF Study Helper",
+        },
+        json=payload,
+        timeout=OPENROUTER_TIMEOUT_SECONDS,
+    )
+
+    if response.status_code >= 400:
+        try:
+            error_payload = response.json()
+        except ValueError:
+            error_payload = response.text
+        raise RuntimeError(f"오류 코드 {response.status_code}: {error_payload}")
+
+    data = response.json()
+    return safe_string(data["choices"][0]["message"]["content"])

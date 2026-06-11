@@ -2,6 +2,7 @@ streamlit
 pypdf
 openai
 python-dotenv
+requests
 PyMuPDF
 pytesseract
 Pillow
