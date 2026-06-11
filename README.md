@@ -36,7 +36,7 @@ api key가 입력이 잘 되었더라도 OpenRouter 연결 테스트에서 처�
 
 ```text
 OPENROUTER_API_KEY=여기에_API_KEY_입력
-OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
+OPENROUTER_MODEL=여기에_모델명_입력
 OLLAMA_MODEL=qwen2.5:7b
 ```
 
