@@ -169,8 +169,10 @@ Technical term handling:
 
 Accuracy rules:
 - Preserve numbers, formulas, variables, symbols, and notation as much as possible.
-- Preserve formulas close to the PDF original, but make them readable.
-- For fractions, prefer clear math notation such as $E_k = \frac{{1}}{{2}}mv^2$ or plain text "E_k = (1/2)mv^2"; do not write cramped text like 1/2x^2 without parentheses or spacing.
+- Preserve formulas close to the PDF original and display them as proper LaTeX math whenever possible.
+- In the formulas field, put the main formula in LaTeX between dollar signs, such as "$E_k = \\frac{{1}}{{2}}mv^2$".
+- Use LaTeX for fractions, powers, subscripts, Greek letters, matrices, integrals, summations, and derivatives whenever they appear in the PDF.
+- Avoid plain text formulas like "1/2x^2" unless the original PDF formula is too unclear to reconstruct. If plain text is unavoidable, add spaces and parentheses.
 - Explain what each symbol means right after the formula when possible.
 - If a formula is unclear or incomplete in the extracted PDF text, say that the original formula needs checking.
 - If no formula is found, write that no formula was extracted.
@@ -193,13 +195,15 @@ Depth requirements:
 
 Return JSON only. Do not use Markdown code fences.
 JSON safety rules:
-- If you use LaTeX in JSON strings, escape backslashes as two backslashes. Example: "$E_k = \\frac{{1}}{{2}}mv^2$".
-- If you use plain text formulas, use parentheses and spacing. Example: "E_k = (1/2) m v^2".
+- Use LaTeX math inside JSON strings for formulas.
+- Escape LaTeX backslashes as two backslashes. Example: "$E_k = \\frac{{1}}{{2}}mv^2$".
+- Do not output unescaped LaTeX like "\frac" in JSON strings.
+- If plain text formulas are unavoidable, use parentheses and spacing. Example: "E_k = (1/2) m v^2".
 
 {{
   "title": "document title or topic",
   "concepts": ["key concept 1: meaning, importance, and relation to the PDF", "key concept 2: meaning, importance, and relation to the PDF"],
-  "formulas": ["$E_k = \\frac{1}{2}mv^2$: kinetic energy, where m is mass and v is speed", "formula or definition 2 with symbols explained and context"],
+  "formulas": ["$E_k = \\frac{{1}}{{2}}mv^2$: kinetic energy, where $m$ is mass and $v$ is speed", "$V = -\\frac{{d\\Phi}}{{dt}}$: induced voltage from changing magnetic flux"],
   "key_points": ["exam key point 1 with why it matters and common mistake", "exam key point 2 with how to apply it"],
   "knowledge_references": [
     {{
