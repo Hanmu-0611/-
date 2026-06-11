@@ -16,7 +16,7 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "qwen/qwen3-next-80b-a3b-instruct:free"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 DEFAULT_OLLAMA_MODEL = "qwen2.5:7b"
-MAX_TEXT_LENGTH = 12000
+MAX_TEXT_LENGTH = 20000
 OPENROUTER_TIMEOUT_SECONDS = 60
 OLLAMA_TIMEOUT_SECONDS = 180
 AI_FAILURE_DETAILS = (
@@ -174,30 +174,34 @@ Accuracy rules:
 - Be detailed enough that a student can actually study from the result.
 - When knowledge-base references are provided, use them only when they are relevant to the PDF.
 - Do not stop after a short summary. Explain relationships between concepts, why they matter, and how they are used.
+- Turn the PDF into a study guide, not just a summary.
+- Prefer concrete explanations over vague statements.
+- When the PDF provides enough context, include the learning flow: prerequisite idea -> main concept -> formula/definition -> how to apply -> common mistake.
+- If examples are present in the PDF, explain them step by step. If examples are not present, do not invent numerical examples; instead describe how an example would be solved in general terms.
 
 Depth requirements:
-- concepts: provide 5 to 8 items when the PDF has enough content.
-- formulas: provide 3 to 8 formulas or definitions when available. If few formulas exist, include important definitions instead.
-- key_points: provide 5 to 10 exam-oriented points.
-- details: write 4 to 8 substantial paragraphs or bullet-style paragraphs.
+- concepts: provide 6 to 10 items when the PDF has enough content. Each item should include what it means and why it matters.
+- formulas: provide 4 to 10 formulas or definitions when available. If few formulas exist, include important definitions instead.
+- key_points: provide 6 to 12 exam-oriented points. Include common traps, required assumptions, and how to recognize problem types when possible.
+- details: write 6 to 10 substantial paragraphs or bullet-style paragraphs. Include definitions, intuition, relationships between concepts, application procedure, and common mistakes.
 - glossary: provide 8 to 15 important terms when possible, always with english, korean, and chinese filled.
-- quiz: provide 5 to 10 review questions, including at least 2 conceptual questions and 2 application/problem-solving questions when possible.
+- quiz: provide 6 to 12 review questions, including conceptual questions, application/problem-solving questions, and short answer questions when possible.
 - knowledge_references: include the relevant references you actually used, and briefly explain why each is relevant.
 
 Return JSON only. Do not use Markdown code fences.
 
 {{
   "title": "document title or topic",
-  "concepts": ["key concept 1 with a useful explanation", "key concept 2 with a useful explanation"],
-  "formulas": ["formula or definition 1 with context", "formula or definition 2 with context"],
-  "key_points": ["exam key point 1 with why it matters", "exam key point 2 with why it matters"],
+  "concepts": ["key concept 1: meaning, importance, and relation to the PDF", "key concept 2: meaning, importance, and relation to the PDF"],
+  "formulas": ["formula or definition 1 with symbols explained and context", "formula or definition 2 with symbols explained and context"],
+  "key_points": ["exam key point 1 with why it matters and common mistake", "exam key point 2 with how to apply it"],
   "knowledge_references": [
     {{
       "title": "reference title",
       "content": "reference content and why it is relevant"
     }}
   ],
-  "details": "detailed explanation with enough depth for studying",
+  "details": "a study-guide style explanation with definitions, intuition, relationships, procedures, and common mistakes",
   "glossary": [
     {{
       "english": "Linear Independence",
@@ -206,7 +210,7 @@ Return JSON only. Do not use Markdown code fences.
       "explanation": "short explanation in the selected output language"
     }}
   ],
-  "quiz": ["review question 1", "review question 2"]
+  "quiz": ["conceptual review question 1", "application review question 2", "short answer review question 3"]
 }}
 
 target_language: {safe_string(target_language)}
