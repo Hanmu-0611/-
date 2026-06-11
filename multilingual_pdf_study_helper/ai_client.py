@@ -189,6 +189,10 @@ Depth requirements:
 - knowledge_references: include the relevant references you actually used, and briefly explain why each is relevant.
 
 Return JSON only. Do not use Markdown code fences.
+JSON safety rules:
+- Do not use raw LaTeX commands such as backslash-frac, backslash-omega, or backslash-Phi inside JSON strings.
+- Write formulas in plain text when possible, for example: E_k = 1/2 m v^2.
+- If you must use a backslash in a JSON string, escape it as two backslashes.
 
 {{
   "title": "document title or topic",
@@ -239,11 +243,48 @@ def strip_markdown_code_block(response_text: str) -> str:
     return text
 
 
-def parse_json_response(response_text: str) -> dict[str, Any]:
-    cleaned_text = strip_markdown_code_block(response_text)
+def extract_json_object(response_text: str) -> str:
+    """Return the largest JSON-looking object from a response."""
+    text = safe_string(response_text).strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return text
+    return text[start : end + 1].strip()
 
+
+def escape_latex_backslashes(json_text: str) -> str:
+    """Escape common LaTeX-style backslashes that break JSON parsing."""
+    return re.sub(r"\\(?=[A-Za-z])", r"\\\\", safe_string(json_text))
+
+
+def load_json_with_repairs(response_text: str) -> dict[str, Any]:
+    cleaned_text = strip_markdown_code_block(response_text)
+    extracted_text = extract_json_object(cleaned_text)
+    candidates = [
+        cleaned_text,
+        extracted_text,
+        escape_latex_backslashes(extracted_text),
+    ]
+
+    seen = set()
+    for candidate in candidates:
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        try:
+            data = json.loads(candidate)
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if isinstance(data, dict):
+            return data
+
+    raise json.JSONDecodeError("Could not parse repaired JSON", cleaned_text, 0)
+
+
+def parse_json_response(response_text: str) -> dict[str, Any]:
     try:
-        data = json.loads(cleaned_text)
+        data = load_json_with_repairs(response_text)
     except (json.JSONDecodeError, TypeError):
         return get_empty_analysis(
             "AI 응답을 JSON으로 변환하지 못했습니다. 아래 원문 응답을 확인하세요.\n\n"
