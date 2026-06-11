@@ -48,6 +48,7 @@ def analyze_pdf(file_path: str, target_language: str, term_mode: str) -> dict:
         "pdf_text_preview": safe_string(pdf_text)[:PDF_PREVIEW_LENGTH],
         "pdf_text_length": len(safe_string(pdf_text)),
         "knowledge_search_count": len(knowledge_results),
+        "auto_knowledge_results": knowledge_results,
         "pdf_pages": pdf_document.get("pages", []),
         "source_knowledge_entries": pdf_document.get("knowledge_entries", []),
         "source_knowledge_count": len(pdf_document.get("knowledge_entries", [])),

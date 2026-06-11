@@ -4,3 +4,4 @@ __pycache__/
 knowledge_base.jsonl
 .env
 .streamlit/
+uploaded_files/

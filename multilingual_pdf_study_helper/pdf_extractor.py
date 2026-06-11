@@ -14,6 +14,50 @@ except ImportError:
 
 
 OCR_LANGUAGES = "eng+chi_sim+kor"
+MATH_SYMBOL_REPLACEMENTS = {
+    "−": "-",
+    "–": "-",
+    "—": "-",
+    "×": "*",
+    "÷": "/",
+    "∗": "*",
+    "≤": "<=",
+    "≥": ">=",
+    "≠": "!=",
+    "≈": "~",
+    "∑": "Σ",
+    "∏": "Π",
+    "√": "sqrt",
+    "∞": "infinity",
+    "π": "pi",
+    "α": "alpha",
+    "β": "beta",
+    "γ": "gamma",
+    "δ": "delta",
+    "λ": "lambda",
+    "μ": "mu",
+    "σ": "sigma",
+    "²": "^2",
+    "³": "^3",
+    "¹": "^1",
+    "⁰": "^0",
+    "⁴": "^4",
+    "⁵": "^5",
+    "⁶": "^6",
+    "⁷": "^7",
+    "⁸": "^8",
+    "⁹": "^9",
+    "₀": "_0",
+    "₁": "_1",
+    "₂": "_2",
+    "₃": "_3",
+    "₄": "_4",
+    "₅": "_5",
+    "₆": "_6",
+    "₇": "_7",
+    "₈": "_8",
+    "₉": "_9",
+}
 
 
 def is_probably_pdf(file_path: str) -> bool:
@@ -32,10 +76,68 @@ def is_probably_pdf(file_path: str) -> bool:
     return header == b"%PDF-"
 
 
+def normalize_math_text(text: str) -> str:
+    """Normalize common PDF math glyphs without deleting numeric meaning."""
+    normalized = text or ""
+    for source, target in MATH_SYMBOL_REPLACEMENTS.items():
+        normalized = normalized.replace(source, target)
+
+    normalized = re.sub(r"(?<=\d)\s*([+\-*/=<>])\s*(?=\d)", r" \1 ", normalized)
+    normalized = re.sub(r"(?<=[A-Za-z])\s*\^\s*(?=\d)", "^", normalized)
+    normalized = re.sub(r"(?<=[A-Za-z])\s*_\s*(?=\d)", "_", normalized)
+    normalized = re.sub(r"([A-Za-z])\s+([A-Za-z])(?=\s*[=+\-*/])", r"\1\2", normalized)
+    normalized = re.sub(r"(?<=\d)\s*,\s*(?=\d{3}\b)", ",", normalized)
+    normalized = re.sub(r"(?<=\d)\s*\.\s*(?=\d)", ".", normalized)
+    return normalized
+
+
 def clean_text(text: str) -> str:
+    text = normalize_math_text(text)
     text = re.sub(r"[ \t]+\n", "\n", text or "")
+    text = re.sub(r"\n\s*([+\-*/=<>])\s*\n", r" \1 ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
+
+
+def is_formula_like(line: str) -> bool:
+    line = line.strip()
+    if not line:
+        return False
+    math_chars = sum(1 for char in line if char.isdigit() or char in "=+-*/^_<>[](){}ΣΠ")
+    return math_chars >= 3 and math_chars / max(len(line), 1) >= 0.22
+
+
+def text_quality_score(text: str) -> int:
+    """Prefer text with more readable numbers/formulas and fewer replacement boxes."""
+    cleaned = safe_len_text(text)
+    if not cleaned:
+        return 0
+    score = len(cleaned)
+    score += len(re.findall(r"\d+(?:[.,]\d+)?", cleaned)) * 8
+    score += len(re.findall(r"[=+\-*/^_<>]|sqrt|lambda|sigma|alpha|beta", cleaned)) * 4
+    score -= cleaned.count("�") * 30
+    score -= cleaned.count("□") * 20
+    return score
+
+
+def safe_len_text(text: str) -> str:
+    return clean_text(text or "")
+
+
+def extract_text_with_fitz(file_path: str, page_index: int) -> str:
+    if fitz is None:
+        return ""
+    try:
+        with fitz.open(file_path) as document:
+            return clean_text(document.load_page(page_index).get_text("text") or "")
+    except Exception:
+        return ""
+
+
+def choose_best_page_text(pypdf_text: str, fitz_text: str) -> str:
+    if text_quality_score(fitz_text) > text_quality_score(pypdf_text) + 20:
+        return fitz_text
+    return pypdf_text
 
 
 def split_paragraphs(text: str) -> list[str]:
@@ -48,6 +150,12 @@ def split_paragraphs(text: str) -> list[str]:
             if buffer:
                 paragraphs.append(" ".join(buffer).strip())
                 buffer = []
+            continue
+        if is_formula_like(line):
+            if buffer:
+                paragraphs.append(" ".join(buffer).strip())
+                buffer = []
+            paragraphs.append(line)
             continue
         buffer.append(line)
 
@@ -106,9 +214,12 @@ def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
     try:
         for page_index, page in enumerate(pages, start=1):
             try:
-                text = clean_text(page.extract_text() or "")
+                pypdf_text = clean_text(page.extract_text() or "")
             except Exception:
-                text = ""
+                pypdf_text = ""
+
+            fitz_text = extract_text_with_fitz(str(path), page_index - 1)
+            text = choose_best_page_text(pypdf_text, fitz_text)
 
             extraction_method = "pdf_text"
 

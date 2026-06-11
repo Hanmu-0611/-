@@ -6,6 +6,7 @@ import streamlit as st
 
 from analyzer import analyze_pdf
 from ai_client import get_current_model_info, test_openrouter_connection
+from knowledge_base import search_knowledge_base
 from safe_utils import normalize_result, safe_list, safe_string
 
 
@@ -112,6 +113,39 @@ def show_knowledge_references(value) -> None:
 
         with st.expander(title):
             st.write(content or "내용이 없습니다.")
+
+
+def show_auto_knowledge_search(result: dict) -> None:
+    st.subheader("자동 검색된 지식베이스")
+
+    auto_results = safe_list(result.get("auto_knowledge_results"))
+    if auto_results:
+        st.caption("PDF 전체 내용을 기준으로 자동 검색한 관련 지식베이스 항목입니다.")
+        for item in auto_results:
+            if not isinstance(item, dict):
+                continue
+            title = safe_string(item.get("title")) or "지식베이스 항목"
+            content = safe_string(item.get("content"))
+            keywords = ", ".join(safe_string(keyword) for keyword in safe_list(item.get("keywords")) if safe_string(keyword))
+            with st.expander(title):
+                if keywords:
+                    st.caption(f"키워드: {keywords}")
+                st.write(content or "내용이 없습니다.")
+    else:
+        st.info("PDF 내용과 자동 매칭된 지식베이스 항목이 아직 없습니다.")
+
+    manual_query = st.text_input(
+        "지식베이스 직접 검색",
+        placeholder="예: linear independence, matrix, eigenvalue, 선형독립",
+    )
+    if manual_query:
+        manual_results = search_knowledge_base(manual_query, top_k=8)
+        st.write(f"직접 검색 결과: {len(manual_results)}개")
+        for item in manual_results:
+            if not isinstance(item, dict):
+                continue
+            with st.expander(safe_string(item.get("title")) or "검색 결과"):
+                st.write(safe_string(item.get("content")) or "내용이 없습니다.")
 
 
 def build_source_markdown(entries) -> str:
@@ -261,6 +295,7 @@ def show_analysis_result(result: dict) -> None:
 
     st.header(safe_result.get("title", "분석 결과"))
     show_local_processing_result(safe_result)
+    show_auto_knowledge_search(safe_result)
     show_pdf_source_inventory(safe_result)
     show_list("주요 개념", safe_result.get("concepts", []))
     show_list("공식/정의", safe_result.get("formulas", []))
