@@ -30,14 +30,14 @@ def build_local_analysis_result(
     preview = safe_string(pdf_text)[:1200]
     key_points = []
     if knowledge_results:
-        key_points.append("PDF 내용과 관련된 지식베이스 항목을 자동으로 찾았습니다.")
-    key_points.append("아래의 PDF 텍스트 미리보기와 출처 지식베이스에서 원문 위치를 확인할 수 있습니다.")
+        key_points.append("PDF 내용과 관련된 지식베이스 항목을 자동으로 찾았습니다. / 已自动找到与 PDF 内容相关的知识库条目。")
+    key_points.append("아래의 PDF 텍스트 미리보기와 출처 지식베이스에서 원문 위치를 확인할 수 있습니다. / 可在下方 PDF 文本预览和出处知识库中查看原文位置。")
 
     return normalize_result(
         {
             "title": "로컬 분석 결과",
             "concepts": [
-                safe_string(item.get("title"))
+                f"{safe_string(item.get('title'))} / 中文参考"
                 for item in knowledge_results
                 if isinstance(item, dict) and safe_string(item.get("title"))
             ][:6],
@@ -54,7 +54,8 @@ def build_local_analysis_result(
             "details": (
                 "API Key 없이 실행한 로컬 분석입니다. "
                 f"설명 언어 설정은 {safe_string(target_language)}, 용어 처리 설정은 {safe_string(term_mode)}입니다. "
-                "생성형 AI 요약은 하지 않았지만 PDF 추출, 자동 지식베이스 검색, 출처 사전, 다운로드 기능은 사용할 수 있습니다.\n\n"
+                "생성형 AI 요약은 하지 않았지만 PDF 추출, 자동 지식베이스 검색, 출처 사전, 다운로드 기능은 사용할 수 있습니다.\n"
+                "中文说明：这是无需 API Key 的本地分析。虽然不会生成完整 AI 总结，但可以使用 PDF 提取、自动知识库搜索、出处词典和下载功能。\n\n"
                 f"[PDF 미리보기]\n{preview}"
             ),
             "glossary": [],

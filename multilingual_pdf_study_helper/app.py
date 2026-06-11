@@ -515,6 +515,7 @@ def main() -> None:
             "English + 한국어 + 중국어",
         ],
     )
+    st.caption("번역/정리 결과에는 기본적으로 중국어(中文) 설명도 함께 포함됩니다.")
 
     term_mode = st.selectbox(
         "전공 용어 처리 방식 선택",

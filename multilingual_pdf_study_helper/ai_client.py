@@ -110,6 +110,16 @@ def get_empty_analysis(details: str = "") -> dict[str, Any]:
     )
 
 
+def ensure_chinese_output_language(target_language: str) -> str:
+    """Always include Chinese in generated study text."""
+    language = safe_string(target_language).strip()
+    if "중국어" in language or "Chinese" in language or "中文" in language:
+        return language or "중국어"
+    if language:
+        return f"{language} + 중국어"
+    return "중국어"
+
+
 def build_prompt(
     pdf_text: str,
     knowledge_results: list[dict],
@@ -117,6 +127,7 @@ def build_prompt(
     term_mode: str,
 ) -> str:
     short_pdf_text = safe_string(pdf_text)[:MAX_TEXT_LENGTH]
+    output_language = ensure_chinese_output_language(target_language)
 
     try:
         knowledge_text = json.dumps(
@@ -132,10 +143,13 @@ def build_prompt(
 
 사용자가 업로드한 PDF 내용을 바탕으로 분석해야 합니다.
 추가로 제공된 지식베이스 참고자료가 있으면 함께 사용하세요.
-설명 언어는 사용자가 선택한 target_language를 따르세요.
+설명 언어는 아래 output_language를 따르세요.
+중요: 사용자가 어떤 언어를 선택해도 번역/정리된 텍스트에는 반드시 중국어(中文)를 함께 포함하세요.
+개념, 공식 설명, 핵심 내용, 상세 설명, 복습 문제에는 중국어 번역 또는 중국어 설명을 함께 넣으세요.
+중국어만 단독으로 쓰지 말고, 선택 언어가 English 또는 한국어이면 선택 언어 + 中文 형태로 병기하세요.
 전공 용어 처리 방식은 사용자가 선택한 term_mode를 따르세요.
 중요한 전공 용어는 학습에 필요하므로 영어 원어와 번역을 적절히 고려하세요.
-예: Linear Independence(선형독립), Basis(기저), Span(생성공간), Rank(랭크)
+예: Linear Independence(선형독립 / 线性无关), Basis(기저 / 基), Span(생성공간 / 张成空间), Rank(랭크 / 秩)
 PDF에 없는 내용을 과장해서 만들지 마세요.
 공식이 없다면 "특별히 추출된 공식은 없습니다."라고 작성하세요.
 숫자, 공식, 변수명, 첨자, 지수는 원문 의미를 최대한 보존하세요.
@@ -149,16 +163,16 @@ PDF 추출 과정에서 공식 일부가 불완전해 보이면 단정하지 말
 
 {{
   "title": "문서 제목 또는 주제",
-  "concepts": ["주요 개념 1", "주요 개념 2"],
-  "formulas": ["공식 또는 정의 1", "공식 또는 정의 2"],
-  "key_points": ["핵심 내용 1", "핵심 내용 2"],
+  "concepts": ["주요 개념 1 / 中文概念 1", "주요 개념 2 / 中文概念 2"],
+  "formulas": ["공식 또는 정의 1 + 중국어 설명", "공식 또는 정의 2 + 中文说明"],
+  "key_points": ["핵심 내용 1 / 中文要点 1", "핵심 내용 2 / 中文要点 2"],
   "knowledge_references": [
     {{
       "title": "참고한 지식베이스 제목",
       "content": "참고 내용"
     }}
   ],
-  "details": "상세 설명",
+  "details": "상세 설명. 반드시 중국어 설명도 함께 포함하세요.",
   "glossary": [
     {{
       "english": "Linear Independence",
@@ -167,10 +181,11 @@ PDF 추출 과정에서 공식 일부가 불완전해 보이면 단정하지 말
       "explanation": "다른 벡터들의 선형결합으로 표현되지 않는 성질"
     }}
   ],
-  "quiz": ["복습 문제 1", "복습 문제 2"]
+  "quiz": ["복습 문제 1 / 中文复习题 1", "복습 문제 2 / 中文复习题 2"]
 }}
 
 target_language: {safe_string(target_language)}
+output_language: {output_language}
 term_mode: {safe_string(term_mode)}
 
 [PDF 텍스트]
