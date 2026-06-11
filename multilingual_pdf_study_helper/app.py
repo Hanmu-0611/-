@@ -7,9 +7,11 @@ import streamlit as st
 from analyzer import analyze_pdf
 from ai_client import (
     get_current_model_info,
+    get_ollama_model_info,
     get_openrouter_api_key,
     normalize_openrouter_api_key,
     openrouter_key_looks_valid,
+    test_ollama_connection,
     test_openrouter_connection,
 )
 from knowledge_base import search_knowledge_base
@@ -22,7 +24,13 @@ ENV_FILE = PROJECT_DIR / ".env"
 ENV_EXAMPLE_FILE = PROJECT_DIR / ".env.example"
 DEFAULT_ENV_CONTENT = """OPENROUTER_API_KEY=여기에_API_KEY_입력
 OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
+OLLAMA_MODEL=qwen2.5:7b
 """
+AI_PROVIDER_OPTIONS = {
+    "로컬 분석만 사용 (API Key 없음)": "local",
+    "Ollama 로컬 AI 사용 (API Key 없음)": "ollama",
+    "OpenRouter 온라인 AI 사용": "openrouter",
+}
 
 
 def ensure_upload_dir() -> bool:
@@ -61,6 +69,31 @@ def save_openrouter_settings(api_key: str, model_name: str) -> bool:
                 [
                     f"OPENROUTER_API_KEY={normalized_key}",
                     f"OPENROUTER_MODEL={safe_string(model_name).strip()}",
+                    f"OLLAMA_MODEL={get_ollama_model_info().get('model')}",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return True
+    except OSError as error:
+        st.sidebar.error(f".env 파일을 저장할 수 없습니다: {error}")
+        return False
+
+
+def save_ollama_settings(model_name: str) -> bool:
+    """Save the preferred Ollama model without requiring an API key."""
+    openrouter_key = get_openrouter_api_key()
+    openrouter_model = get_current_model_info().get("model")
+    ollama_model = safe_string(model_name).strip() or get_ollama_model_info().get("model")
+
+    try:
+        ENV_FILE.write_text(
+            "\n".join(
+                [
+                    f"OPENROUTER_API_KEY={openrouter_key}",
+                    f"OPENROUTER_MODEL={openrouter_model}",
+                    f"OLLAMA_MODEL={ollama_model}",
                     "",
                 ]
             ),
@@ -342,7 +375,56 @@ def show_analysis_result(result: dict) -> None:
     show_list("복습 문제", safe_result.get("quiz", []))
 
 
-def show_openrouter_status_sidebar() -> None:
+def show_ai_settings_sidebar() -> tuple[str, str]:
+    st.sidebar.header("AI 모드")
+
+    selected_label = st.sidebar.selectbox(
+        "분석 방식 선택",
+        list(AI_PROVIDER_OPTIONS.keys()),
+    )
+    ai_provider = AI_PROVIDER_OPTIONS.get(selected_label, "local")
+
+    if ai_provider == "local":
+        st.sidebar.success("API Key 없이 로컬 분석을 사용합니다.")
+        st.sidebar.caption("PDF 추출, 출처 지식베이스, 자동 검색, 다운로드 기능을 사용할 수 있습니다.")
+        return ai_provider, ""
+
+    if ai_provider == "ollama":
+        ollama_info = get_ollama_model_info()
+        ollama_model = safe_string(ollama_info.get("model"))
+        st.sidebar.success("OpenRouter API Key 없이 로컬 Ollama를 사용합니다.")
+
+        with st.sidebar.expander("Ollama 로컬 AI 설정", expanded=True):
+            ollama_model_input = st.text_input(
+                "Ollama 모델",
+                value=ollama_model,
+                placeholder="qwen2.5:7b",
+            )
+            if st.button("Ollama 모델 저장"):
+                if save_ollama_settings(ollama_model_input):
+                    st.sidebar.success("저장했습니다. 다시 분석을 실행해주세요.")
+
+            if st.button("Ollama 연결 테스트"):
+                with st.sidebar.spinner("Ollama 연결을 확인하는 중입니다..."):
+                    try:
+                        test_result = test_ollama_connection(ollama_model_input)
+                    except Exception as error:
+                        test_result = {
+                            "success": False,
+                            "message": safe_string(error),
+                        }
+
+                if test_result.get("success"):
+                    st.sidebar.success("Ollama 연결 성공! 로컬 AI 분석을 사용할 수 있습니다.")
+                else:
+                    st.sidebar.error("Ollama 연결에 실패했습니다.")
+                    st.sidebar.caption("Ollama 앱을 설치/실행한 뒤 모델을 내려받아야 합니다.")
+                    if test_result.get("message"):
+                        st.sidebar.caption(safe_string(test_result.get("message")))
+
+        st.sidebar.caption("예: ollama pull qwen2.5:7b 실행 후 사용합니다.")
+        return ai_provider, safe_string(ollama_model_input).strip() or ollama_model
+
     st.sidebar.header("OpenRouter 상태")
 
     model_info = get_current_model_info()
@@ -398,6 +480,8 @@ def show_openrouter_status_sidebar() -> None:
             if test_result.get("message"):
                 st.sidebar.caption(safe_string(test_result.get("message")))
 
+    return ai_provider, ""
+
 
 def main() -> None:
     st.set_page_config(
@@ -408,7 +492,7 @@ def main() -> None:
 
     ensure_upload_dir()
     ensure_env_file()
-    show_openrouter_status_sidebar()
+    ai_provider, ollama_model = show_ai_settings_sidebar()
 
     st.title("다국어 PDF 지식베이스 학습 도우미 AI")
     st.write(
@@ -450,12 +534,21 @@ def main() -> None:
         if file_path is None:
             return
 
-        with st.spinner("PDF를 읽고 AI 분석을 진행하고 있습니다..."):
+        if ai_provider == "local":
+            spinner_text = "PDF를 읽고 로컬 분석을 진행하고 있습니다..."
+        elif ai_provider == "ollama":
+            spinner_text = "PDF를 읽고 Ollama 로컬 AI 분석을 진행하고 있습니다..."
+        else:
+            spinner_text = "PDF를 읽고 OpenRouter AI 분석을 진행하고 있습니다..."
+
+        with st.spinner(spinner_text):
             try:
                 result = analyze_pdf(
                     file_path=str(file_path),
                     target_language=target_language,
                     term_mode=term_mode,
+                    ai_provider=ai_provider,
+                    ollama_model=ollama_model,
                 )
             except Exception as error:
                 result = {

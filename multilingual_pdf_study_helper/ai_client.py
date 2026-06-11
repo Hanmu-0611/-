@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-import openai
 import requests
 
 from safe_utils import normalize_result, safe_list, safe_string
@@ -14,11 +13,14 @@ PROJECT_DIR = Path(__file__).resolve().parent
 ENV_FILE = PROJECT_DIR / ".env"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "qwen/qwen3-next-80b-a3b-instruct:free"
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+DEFAULT_OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 MAX_TEXT_LENGTH = 12000
 OPENROUTER_TIMEOUT_SECONDS = 60
+OLLAMA_TIMEOUT_SECONDS = 180
 AI_FAILURE_DETAILS = (
     "AI 분석을 완료하지 못했습니다. "
-    "OpenRouter API 키, 모델명, 인터넷 연결 상태를 확인해주세요."
+    "선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
 )
 API_KEY_PLACEHOLDERS = {
     "your_api_key_here",
@@ -73,6 +75,23 @@ def get_current_model_info() -> dict[str, Any]:
     if not raw_model or raw_model in MODEL_PLACEHOLDERS:
         return {
             "model": DEFAULT_MODEL,
+            "uses_default": True,
+        }
+
+    return {
+        "model": raw_model,
+        "uses_default": False,
+    }
+
+
+def get_ollama_model_info() -> dict[str, Any]:
+    """Return the configured local Ollama model."""
+    load_dotenv(ENV_FILE, override=True)
+    raw_model = safe_string(os.getenv("OLLAMA_MODEL")).strip()
+
+    if not raw_model or raw_model in MODEL_PLACEHOLDERS:
+        return {
+            "model": DEFAULT_OLLAMA_MODEL,
             "uses_default": True,
         }
 
@@ -248,6 +267,47 @@ def call_openrouter_ai(
     return parse_json_response(response_text)
 
 
+def call_ollama_ai(
+    pdf_text: str,
+    knowledge_results: list[dict],
+    target_language: str,
+    term_mode: str,
+    model: str | None = None,
+) -> dict[str, Any]:
+    """Run the same AI analysis through local Ollama without an API key."""
+    model_name = safe_string(model).strip() or get_ollama_model_info()["model"]
+
+    try:
+        prompt = build_prompt(
+            pdf_text=pdf_text,
+            knowledge_results=knowledge_results,
+            target_language=target_language,
+            term_mode=term_mode,
+        )
+    except Exception as error:
+        return normalize_result(
+            {
+                "error": f"Ollama 프롬프트를 만드는 중 오류가 발생했습니다: {error}",
+                "details": "PDF 텍스트 또는 지식베이스 값을 처리하지 못했습니다.",
+            }
+        )
+
+    try:
+        response_text = request_ollama_completion(model_name, prompt)
+    except Exception as error:
+        return normalize_result(
+            {
+                "error": f"Ollama 호출에 실패했습니다: {error}",
+                "details": (
+                    "Ollama가 설치되어 있고 실행 중인지 확인해주세요. "
+                    "예: ollama serve, ollama pull qwen2.5:7b"
+                ),
+            }
+        )
+
+    return parse_json_response(response_text)
+
+
 def test_openrouter_connection() -> dict[str, Any]:
     """Send a very small request to OpenRouter and report connection status."""
     api_key = get_openrouter_api_key()
@@ -287,6 +347,62 @@ def test_openrouter_connection() -> dict[str, Any]:
         "success": False,
         "message": "OpenRouter가 빈 응답을 반환했습니다.",
     }
+
+
+def test_ollama_connection(model: str | None = None) -> dict[str, Any]:
+    """Check whether the local Ollama server can answer a tiny request."""
+    model_name = safe_string(model).strip() or get_ollama_model_info()["model"]
+
+    try:
+        response_text = request_ollama_completion(
+            model=model_name,
+            prompt="Reply with OK only.",
+        )
+    except Exception as error:
+        return {
+            "success": False,
+            "message": safe_string(error) or "Ollama 연결 테스트 중 오류가 발생했습니다.",
+        }
+
+    if response_text.strip():
+        return {
+            "success": True,
+            "message": f"Ollama 연결 성공: {model_name}",
+        }
+
+    return {
+        "success": False,
+        "message": "Ollama가 빈 응답을 반환했습니다.",
+    }
+
+
+def request_ollama_completion(model: str, prompt: str) -> str:
+    """Call the local Ollama generate API."""
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "format": "json",
+        "options": {
+            "temperature": 0.2,
+        },
+    }
+
+    response = requests.post(
+        f"{OLLAMA_BASE_URL}/api/generate",
+        json=payload,
+        timeout=OLLAMA_TIMEOUT_SECONDS,
+    )
+
+    if response.status_code >= 400:
+        try:
+            error_payload = response.json()
+        except ValueError:
+            error_payload = response.text
+        raise RuntimeError(f"오류 코드 {response.status_code}: {error_payload}")
+
+    data = response.json()
+    return safe_string(data.get("response"))
 
 
 def request_chat_completion(
