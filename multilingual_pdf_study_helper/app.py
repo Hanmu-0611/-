@@ -5,7 +5,7 @@ import json
 import streamlit as st
 
 from analyzer import analyze_pdf
-from ai_client import get_current_model_info, test_openrouter_connection
+from ai_client import get_current_model_info, get_openrouter_api_key, test_openrouter_connection
 from knowledge_base import search_knowledge_base
 from safe_utils import normalize_result, safe_list, safe_string
 
@@ -43,6 +43,25 @@ def ensure_env_file() -> None:
         ENV_FILE.write_text(env_content, encoding="utf-8")
     except OSError:
         return
+
+
+def save_openrouter_settings(api_key: str, model_name: str) -> bool:
+    """Save OpenRouter settings to the local .env file."""
+    try:
+        ENV_FILE.write_text(
+            "\n".join(
+                [
+                    f"OPENROUTER_API_KEY={safe_string(api_key).strip()}",
+                    f"OPENROUTER_MODEL={safe_string(model_name).strip()}",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return True
+    except OSError as error:
+        st.sidebar.error(f".env 파일을 저장할 수 없습니다: {error}")
+        return False
 
 
 def uploaded_file_is_pdf(uploaded_file) -> bool:
@@ -320,7 +339,28 @@ def show_openrouter_status_sidebar() -> None:
 
     model_info = get_current_model_info()
     model_name = safe_string(model_info.get("model"))
+    current_key = get_openrouter_api_key()
     st.sidebar.write(f"현재 AI 모델: {model_name}")
+
+    if current_key:
+        st.sidebar.success("API Key가 설정되어 있습니다.")
+    else:
+        st.sidebar.warning("API Key가 없어 AI 요약은 건너뛰고 로컬 분석만 사용합니다.")
+
+    with st.sidebar.expander("API Key / 모델 설정"):
+        api_key_input = st.text_input(
+            "OpenRouter API Key",
+            type="password",
+            placeholder="sk-or-...",
+        )
+        model_input = st.text_input(
+            "OpenRouter 모델",
+            value=model_name,
+        )
+        if st.button("API 설정 저장"):
+            key_to_save = api_key_input.strip() or current_key
+            if save_openrouter_settings(key_to_save, model_input):
+                st.sidebar.success("저장했습니다. 다시 분석을 실행해주세요.")
 
     if model_info.get("uses_default"):
         st.sidebar.caption("OPENROUTER_MODEL이 비어 있거나 기본값이라 기본 무료 모델을 사용합니다.")
