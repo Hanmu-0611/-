@@ -2,31 +2,88 @@
 
 这是一个可以部署到网上的 PDF 自动整理网站。用户打开链接后可以上传 PDF，系统会提取内容、整理正文，并生成带出处的知识库条目。
 
+## 最省事的使用方式
+
+直接打开 `index.html`。这是纯前端版本，用户不需要安装 Python，也不需要启动服务器。
+
+如果把这个仓库开启 GitHub Pages，别人打开网页链接就能直接使用。
+
 ## 文件
 
+- `index.html`：纯前端一键打开版本，适合分享网页链接或下载后双击打开
 - `pdf_extract_server.py`：网站和后端接口，部署时运行这个文件
 - `requirements.txt`：Python 依赖
 - `apt.txt`：OCR 需要的 Tesseract 系统依赖
 - `Procfile`：Heroku/Railway 等平台可用
 - `render.yaml`：Render 部署配置
+- `run_local.command`：macOS 本地一键运行
+- `run_local.sh`：Linux/macOS 终端一键运行
+- `run_local.bat`：Windows 本地一键运行
+
+## 本地一键运行
+
+最简单：
+
+```text
+双击 index.html
+```
+
+这个方式不需要安装 Python。浏览器会在本地处理 PDF，PDF 不会上传到服务器。
+
+### macOS
+
+双击：
+
+```text
+run_local.command
+```
+
+如果 macOS 提示没有权限，先在终端运行一次：
+
+```bash
+chmod +x run_local.command
+```
+
+然后再双击。
+
+### Windows
+
+双击：
+
+```text
+run_local.bat
+```
+
+### Linux 或终端运行
+
+```bash
+bash run_local.sh
+```
+
+启动后打开：
+
+```text
+http://127.0.0.1:8000
+```
 
 ## 最简单部署方式：Render
 
-1. 打开 Render，选择 `New` -> `Web Service`。
+1. 打开 Render，选择 `New` -> `Blueprint`。
 2. 连接这个 GitHub 仓库。
-3. Build Command 填：
+3. Render 会读取 `render.yaml` 自动配置。
+4. 部署完成后，Render 会给你一个公开链接。别人打开这个链接就能使用。
+
+如果用 `New` -> `Web Service` 手动部署，Build Command 填：
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Start Command 填：
+Start Command 填：
 
 ```bash
 python pdf_extract_server.py
 ```
-
-5. 部署完成后，Render 会给你一个公开链接。别人打开这个链接就能使用。
 
 ## OCR
 

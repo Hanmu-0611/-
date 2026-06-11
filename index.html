@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF 自动整理知识库</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #172033;
+        --muted: #5c667a;
+        --line: #d8dee8;
+        --panel: #ffffff;
+        --bg: #f4f6f8;
+        --accent: #166534;
+        --accent-2: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      main {
+        width: min(1120px, calc(100vw - 32px));
+        margin: 30px auto;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      .status {
+        min-height: 24px;
+        color: var(--muted);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .toolbar,
+      .searchbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .searchbar {
+        margin: 14px 0;
+      }
+
+      input,
+      button,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      input[type="file"],
+      input[type="search"],
+      select {
+        min-height: 38px;
+      }
+
+      input[type="search"] {
+        flex: 1;
+        min-width: 220px;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+
+      select {
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      button {
+        min-height: 38px;
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 6px;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: var(--accent-2);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 14px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 560px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        line-height: 1.55;
+        resize: vertical;
+        white-space: pre-wrap;
+      }
+
+      .side {
+        min-height: 560px;
+        overflow: auto;
+      }
+
+      .entry {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 0;
+      }
+
+      .entry strong {
+        display: block;
+        font-size: 14px;
+      }
+
+      .entry span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 860px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>PDF 自动整理知识库</h1>
+        <div id="status" class="status">选择 PDF 后点击整理。</div>
+      </header>
+
+      <section class="panel">
+        <div class="toolbar">
+          <input id="pdfInput" type="file" accept="application/pdf,.pdf" />
+          <select id="viewMode">
+            <option value="organized">整理结果</option>
+            <option value="knowledge">知识库出处</option>
+            <option value="text">原始文本</option>
+            <option value="json">JSON 数据</option>
+          </select>
+          <button id="processButton">提交并整理</button>
+          <button id="downloadButton" class="secondary" disabled>下载整理结果</button>
+        </div>
+
+        <div class="searchbar">
+          <input id="searchInput" type="search" placeholder="搜索知识库，例如：合同、日期、摘要、关键词" />
+          <button id="searchButton" class="secondary">查询出处</button>
+        </div>
+
+        <div class="grid">
+          <textarea id="output" placeholder="整理结果会显示在这里"></textarea>
+          <aside id="knowledgeList" class="panel side"></aside>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+    <script type="module">
+      import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+      import { createWorker } from "https://cdn.jsdelivr.net/npm/tesseract.js@5/+esm";
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+
+      const input = document.querySelector("#pdfInput");
+      const processButton = document.querySelector("#processButton");
+      const downloadButton = document.querySelector("#downloadButton");
+      const searchButton = document.querySelector("#searchButton");
+      const searchInput = document.querySelector("#searchInput");
+      const viewMode = document.querySelector("#viewMode");
+      const output = document.querySelector("#output");
+      const statusEl = document.querySelector("#status");
+      const knowledgeList = document.querySelector("#knowledgeList");
+
+      let latestResult = null;
+      let knowledgeEntries = [];
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      function cleanText(text) {
+        return (text || "")
+          .replace(/[ \t]+\n/g, "\n")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      }
+
+      function splitParagraphs(text) {
+        return cleanText(text)
+          .split(/\n{2,}|(?<=。|！|？|\.)\s+/)
+          .map((item) => item.replace(/\s+/g, " ").trim())
+          .filter((item) => item.length > 0);
+      }
+
+      function looksLikeHeading(text) {
+        const line = text.trim();
+        if (!line || line.length > 90) return false;
+        return [
+          /^\d+(\.\d+)*[.)、]?\s+.+/,
+          /^第[一二三四五六七八九十百千万0-9]+[章节部分篇].+/,
+          /^(Abstract|Introduction|Conclusion|References|摘要|引言|结论|参考文献)\b/i,
+          /^[A-Z][A-Z0-9\s:：,-]{4,}$/,
+        ].some((pattern) => pattern.test(line));
+      }
+
+      function extractKeyItems(text) {
+        const unique = (matches) => [...new Set(matches || [])].slice(0, 40);
+        return {
+          emails: unique(text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g)),
+          urls: unique(text.match(/https?:\/\/[^\s)）]+/g)),
+          phones: unique(text.match(/(?:\+?\d[\d\s().-]{7,}\d)/g)),
+          dates: unique(
+            text.match(/\b\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}日?\b|\b\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\b/g),
+          ),
+        };
+      }
+
+      async function extractPageText(page, pageNumber, worker) {
+        const textContent = await page.getTextContent();
+        const directText = cleanText(textContent.items.map((item) => item.str).join(" "));
+        if (directText.length >= 20) {
+          return { text: directText, method: "pdf_text" };
+        }
+
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+
+        setStatus(`第 ${pageNumber} 页正在 OCR...`);
+        const { data } = await worker.recognize(canvas);
+        return { text: cleanText(data.text), method: "ocr" };
+      }
+
+      function organize(filename, pages) {
+        const fullText = pages.map((page) => page.text).filter(Boolean).join("\n\n");
+        const paragraphs = splitParagraphs(fullText);
+        const headings = paragraphs.filter(looksLikeHeading);
+        const keyItems = extractKeyItems(fullText);
+        const title = paragraphs.find((item) => item.length >= 4 && item.length <= 120) || "PDF 整理结果";
+
+        const markdown = [
+          `# ${title}`,
+          "",
+          "## 基本信息",
+          `- 文件：${filename}`,
+          `- 页数：${pages.length}`,
+          `- 字符数：${fullText.length}`,
+          `- 段落数：${paragraphs.length}`,
+          "",
+        ];
+
+        if (headings.length) {
+          markdown.push("## 识别到的章节/标题", ...headings.slice(0, 40).map((item) => `- ${item}`), "");
+        }
+
+        if (Object.values(keyItems).some((items) => items.length)) {
+          markdown.push("## 识别到的关键信息");
+          for (const [label, values] of [
+            ["邮箱", keyItems.emails],
+            ["网址", keyItems.urls],
+            ["电话", keyItems.phones],
+            ["日期", keyItems.dates],
+          ]) {
+            if (values.length) markdown.push(`- ${label}：${values.join(", ")}`);
+          }
+          markdown.push("");
+        }
+
+        markdown.push("## 整理后的正文");
+        for (const paragraph of paragraphs) {
+          markdown.push(looksLikeHeading(paragraph) ? `\n### ${paragraph}\n` : paragraph, "");
+        }
+
+        return {
+          filename,
+          page_count: pages.length,
+          char_count: fullText.length,
+          text: fullText,
+          pages,
+          organized: {
+            title,
+            headings,
+            paragraphs,
+            key_items: keyItems,
+            markdown: markdown.join("\n").trim(),
+          },
+          ocr: {
+            pages_used: pages.filter((page) => page.extraction_method === "ocr").length,
+          },
+        };
+      }
+
+      function buildKnowledge(result) {
+        const entries = [];
+        for (const page of result.pages) {
+          splitParagraphs(page.text).forEach((paragraph, index) => {
+            if (paragraph.length < 8) return;
+            entries.push({
+              id: `${result.filename}-p${page.page}-${index + 1}`,
+              title: paragraph.split(/[。.!！?？]/)[0].slice(0, 70) || `第 ${page.page} 页第 ${index + 1} 段`,
+              content: paragraph,
+              kind: looksLikeHeading(paragraph) ? "heading" : "paragraph",
+              source: {
+                file: result.filename,
+                page: page.page,
+                paragraph: index + 1,
+                label: `${result.filename} / 第 ${page.page} 页 / 第 ${index + 1} 段`,
+              },
+            });
+          });
+        }
+        return entries;
+      }
+
+      function formatEntries(entries) {
+        if (!entries.length) return "暂无知识库内容。";
+        return entries
+          .map((entry, index) => {
+            return [
+              `${index + 1}. ${entry.title}`,
+              `出处：${entry.source.label}`,
+              `类型：${entry.kind}`,
+              `内容：${entry.content}`,
+            ].join("\n");
+          })
+          .join("\n\n---\n\n");
+      }
+
+      function renderKnowledgeList(entries) {
+        knowledgeList.innerHTML = entries
+          .slice(0, 80)
+          .map((entry) => {
+            return `<div class="entry"><strong>${escapeHtml(entry.title)}</strong><span>${escapeHtml(entry.source.label)}</span></div>`;
+          })
+          .join("");
+      }
+
+      function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, (char) => {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char];
+        });
+      }
+
+      function render() {
+        if (!latestResult) return;
+        if (viewMode.value === "knowledge") {
+          output.value = formatEntries(knowledgeEntries);
+        } else if (viewMode.value === "text") {
+          output.value = latestResult.text;
+        } else if (viewMode.value === "json") {
+          output.value = JSON.stringify({ ...latestResult, knowledge_base: knowledgeEntries }, null, 2);
+        } else {
+          output.value = latestResult.organized.markdown;
+        }
+        renderKnowledgeList(knowledgeEntries);
+      }
+
+      async function processPdf() {
+        const file = input.files[0];
+        if (!file) {
+          setStatus("请选择一个 PDF 文件。");
+          return;
+        }
+
+        processButton.disabled = true;
+        downloadButton.disabled = true;
+        output.value = "";
+        knowledgeList.innerHTML = "";
+
+        let worker = null;
+        try {
+          setStatus("正在加载 PDF...");
+          const buffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          worker = await createWorker("eng+chi_sim+kor");
+
+          const pages = [];
+          for (let index = 1; index <= pdf.numPages; index += 1) {
+            setStatus(`正在整理第 ${index} / ${pdf.numPages} 页...`);
+            const page = await pdf.getPage(index);
+            const extracted = await extractPageText(page, index, worker);
+            pages.push({
+              page: index,
+              text: extracted.text,
+              char_count: extracted.text.length,
+              extraction_method: extracted.method,
+            });
+          }
+
+          latestResult = organize(file.name, pages);
+          knowledgeEntries = buildKnowledge(latestResult);
+          render();
+          downloadButton.disabled = false;
+          setStatus(
+            `完成：${latestResult.page_count} 页，${latestResult.organized.paragraphs.length} 段，知识库 ${knowledgeEntries.length} 条，OCR ${latestResult.ocr.pages_used} 页。`,
+          );
+        } catch (error) {
+          setStatus(error.message || "处理失败。");
+        } finally {
+          if (worker) await worker.terminate();
+          processButton.disabled = false;
+        }
+      }
+
+      function downloadResult() {
+        if (!latestResult) return;
+        const blob = new Blob([latestResult.organized.markdown], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${latestResult.filename.replace(/\.pdf$/i, "")}-整理结果.md`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function searchKnowledge() {
+        const keyword = searchInput.value.trim().toLowerCase();
+        const entries = keyword
+          ? knowledgeEntries.filter((entry) => `${entry.title} ${entry.content} ${entry.source.label}`.toLowerCase().includes(keyword))
+          : knowledgeEntries;
+        viewMode.value = "knowledge";
+        output.value = formatEntries(entries);
+        renderKnowledgeList(entries);
+        setStatus(`查询到 ${entries.length} 条出处。`);
+      }
+
+      processButton.addEventListener("click", processPdf);
+      downloadButton.addEventListener("click", downloadResult);
+      searchButton.addEventListener("click", searchKnowledge);
+      viewMode.addEventListener("change", render);
+    </script>
+  </body>
+</html>
