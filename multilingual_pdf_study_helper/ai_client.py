@@ -170,6 +170,7 @@ Technical term handling:
 Accuracy rules:
 - Preserve numbers, formulas, variables, symbols, and notation as much as possible.
 - Preserve formulas close to the PDF original and display them as proper LaTeX math whenever possible.
+- In every output field, including concepts, key_points, details, quiz, answers, explanations, and formulas, render mathematical expressions in LaTeX between dollar signs whenever possible.
 - In the formulas field, put the main formula in LaTeX between dollar signs, such as "$E_k = \\frac{{1}}{{2}}mv^2$".
 - Use LaTeX for fractions, powers, subscripts, Greek letters, matrices, integrals, summations, and derivatives whenever they appear in the PDF.
 - Avoid plain text formulas like "1/2x^2" unless the original PDF formula is too unclear to reconstruct. If plain text is unavoidable, add spaces and parentheses.
@@ -191,11 +192,12 @@ Depth requirements:
 - details: write 6 to 10 substantial paragraphs or bullet-style paragraphs. Include definitions, intuition, relationships between concepts, application procedure, and common mistakes.
 - glossary: provide 8 to 15 important terms when possible, always with english, korean, and chinese filled.
 - quiz: provide 6 to 12 review questions, including conceptual questions, application/problem-solving questions, and short answer questions when possible. Each quiz item must include question, answer, and explanation.
+- In quiz questions, answers, and explanations, render any formula or mathematical expression in LaTeX between dollar signs.
 - knowledge_references: include the relevant references you actually used, and briefly explain why each is relevant.
 
 Return JSON only. Do not use Markdown code fences.
 JSON safety rules:
-- Use LaTeX math inside JSON strings for formulas.
+- Use LaTeX math inside JSON strings for every mathematical expression, not only the formulas field.
 - Escape LaTeX backslashes as two backslashes. Example: "$E_k = \\frac{{1}}{{2}}mv^2$".
 - Do not output unescaped LaTeX like "\frac" in JSON strings.
 - If plain text formulas are unavoidable, use parentheses and spacing. Example: "E_k = (1/2) m v^2".
@@ -223,8 +225,8 @@ JSON safety rules:
   "quiz": [
     {{
       "question": "conceptual review question",
-      "answer": "answer hidden by default in the app",
-      "explanation": "brief explanation or solving steps"
+      "answer": "answer hidden by default in the app, using LaTeX for formulas such as $E_k = \\frac{{1}}{{2}}mv^2$",
+      "explanation": "brief explanation or solving steps, with math rendered in LaTeX when needed"
     }}
   ]
 }}

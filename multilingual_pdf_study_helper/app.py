@@ -1,6 +1,7 @@
 from pathlib import Path
 from uuid import uuid4
 import json
+import re
 
 import streamlit as st
 
@@ -544,6 +545,13 @@ def format_math_text(text: str) -> str:
     formatted = safe_string(text)
     replacements = {
         "\\\\frac": "\\frac",
+        "\\\\sqrt": "\\sqrt",
+        "\\\\sum": "\\sum",
+        "\\\\int": "\\int",
+        "\\\\lim": "\\lim",
+        "\\\\partial": "\\partial",
+        "\\\\cdot": "\\cdot",
+        "\\\\times": "\\times",
         "\\\\omega": "\\omega",
         "\\\\Phi": "\\Phi",
         "\\\\theta": "\\theta",
@@ -551,10 +559,31 @@ def format_math_text(text: str) -> str:
         "\\\\alpha": "\\alpha",
         "\\\\beta": "\\beta",
         "\\\\gamma": "\\gamma",
+        "\\\\Delta": "\\Delta",
     }
     for source, target in replacements.items():
         formatted = formatted.replace(source, target)
-    return formatted
+
+    formatted = formatted.replace("\\\\(", "\\(").replace("\\\\)", "\\)")
+    formatted = formatted.replace("\\\\[", "\\[").replace("\\\\]", "\\]")
+    formatted = formatted.replace("\\(", "$").replace("\\)", "$")
+    formatted = formatted.replace("\\[", "$$").replace("\\]", "$$")
+
+    latex_commands = (
+        r"\\(?:frac|sqrt|sum|int|lim|partial|cdot|times|omega|Phi|theta|lambda|alpha|beta|gamma|Delta)"
+    )
+
+    parts = re.split(r"(\$[^$]*\$)", formatted)
+    for index in range(0, len(parts), 2):
+        segment = parts[index]
+        segment = re.sub(
+            rf"\(([^()\n]*(?:{latex_commands})[^()\n]*)\)",
+            r"$\1$",
+            segment,
+        )
+        parts[index] = segment
+
+    return "".join(parts)
 
 
 def show_quiz(ui_language: str, value) -> None:
@@ -578,7 +607,7 @@ def show_quiz(ui_language: str, value) -> None:
         if not question and not answer:
             continue
 
-        st.markdown(f"**{index}. {format_math_text(question or t(ui_language, 'quiz'))}**")
+        st.markdown(f"**{index}.** {format_math_text(question or t(ui_language, 'quiz'))}")
         with st.expander(t(ui_language, "quiz_answer")):
             if answer:
                 st.markdown(format_math_text(answer))
