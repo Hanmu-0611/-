@@ -169,6 +169,9 @@ Technical term handling:
 
 Accuracy rules:
 - Preserve numbers, formulas, variables, symbols, and notation as much as possible.
+- Preserve formulas close to the PDF original, but make them readable.
+- For fractions, prefer clear math notation such as $E_k = \frac{{1}}{{2}}mv^2$ or plain text "E_k = (1/2)mv^2"; do not write cramped text like 1/2x^2 without parentheses or spacing.
+- Explain what each symbol means right after the formula when possible.
 - If a formula is unclear or incomplete in the extracted PDF text, say that the original formula needs checking.
 - If no formula is found, write that no formula was extracted.
 - Be detailed enough that a student can actually study from the result.
@@ -185,19 +188,18 @@ Depth requirements:
 - key_points: provide 6 to 12 exam-oriented points. Include common traps, required assumptions, and how to recognize problem types when possible.
 - details: write 6 to 10 substantial paragraphs or bullet-style paragraphs. Include definitions, intuition, relationships between concepts, application procedure, and common mistakes.
 - glossary: provide 8 to 15 important terms when possible, always with english, korean, and chinese filled.
-- quiz: provide 6 to 12 review questions, including conceptual questions, application/problem-solving questions, and short answer questions when possible.
+- quiz: provide 6 to 12 review questions, including conceptual questions, application/problem-solving questions, and short answer questions when possible. Each quiz item must include question, answer, and explanation.
 - knowledge_references: include the relevant references you actually used, and briefly explain why each is relevant.
 
 Return JSON only. Do not use Markdown code fences.
 JSON safety rules:
-- Do not use raw LaTeX commands such as backslash-frac, backslash-omega, or backslash-Phi inside JSON strings.
-- Write formulas in plain text when possible, for example: E_k = 1/2 m v^2.
-- If you must use a backslash in a JSON string, escape it as two backslashes.
+- If you use LaTeX in JSON strings, escape backslashes as two backslashes. Example: "$E_k = \\frac{{1}}{{2}}mv^2$".
+- If you use plain text formulas, use parentheses and spacing. Example: "E_k = (1/2) m v^2".
 
 {{
   "title": "document title or topic",
   "concepts": ["key concept 1: meaning, importance, and relation to the PDF", "key concept 2: meaning, importance, and relation to the PDF"],
-  "formulas": ["formula or definition 1 with symbols explained and context", "formula or definition 2 with symbols explained and context"],
+  "formulas": ["$E_k = \\frac{1}{2}mv^2$: kinetic energy, where m is mass and v is speed", "formula or definition 2 with symbols explained and context"],
   "key_points": ["exam key point 1 with why it matters and common mistake", "exam key point 2 with how to apply it"],
   "knowledge_references": [
     {{
@@ -214,7 +216,13 @@ JSON safety rules:
       "explanation": "short explanation in the selected output language"
     }}
   ],
-  "quiz": ["conceptual review question 1", "application review question 2", "short answer review question 3"]
+  "quiz": [
+    {{
+      "question": "conceptual review question",
+      "answer": "answer hidden by default in the app",
+      "explanation": "brief explanation or solving steps"
+    }}
+  ]
 }}
 
 target_language: {safe_string(target_language)}

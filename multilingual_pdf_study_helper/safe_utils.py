@@ -82,6 +82,34 @@ def normalize_glossary_item(value: Any) -> dict:
     }
 
 
+def normalize_quiz_item(value: Any) -> dict:
+    item = safe_dict(value)
+    if not item:
+        return {
+            "question": safe_string(value),
+            "answer": "",
+            "explanation": "",
+        }
+
+    question = (
+        safe_string(item.get("question"))
+        or safe_string(item.get("q"))
+        or safe_string(item.get("prompt"))
+    )
+    answer = (
+        safe_string(item.get("answer"))
+        or safe_string(item.get("a"))
+        or safe_string(item.get("solution"))
+    )
+    explanation = safe_string(item.get("explanation")) or safe_string(item.get("reason"))
+
+    return {
+        "question": question,
+        "answer": answer,
+        "explanation": explanation,
+    }
+
+
 def normalize_result(result: Any) -> dict:
     """Fill missing AI result fields and normalize malformed field types."""
     data = DEFAULT_RESULT.copy()
@@ -94,8 +122,14 @@ def normalize_result(result: Any) -> dict:
     data["title"] = safe_string(data.get("title")) or "AI 분석 결과"
     data["details"] = safe_string(data.get("details"))
 
-    for key in ["concepts", "formulas", "key_points", "quiz"]:
+    for key in ["concepts", "formulas", "key_points"]:
         data[key] = [safe_string(item) for item in safe_list(data.get(key)) if safe_string(item)]
+
+    data["quiz"] = [
+        item
+        for item in [normalize_quiz_item(item) for item in safe_list(data.get("quiz"))]
+        if item.get("question") or item.get("answer")
+    ]
 
     data["knowledge_references"] = [
         normalize_reference(item) for item in safe_list(data.get("knowledge_references"))

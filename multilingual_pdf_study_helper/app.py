@@ -176,6 +176,8 @@ TEXT = {
         "key_points": "시험 핵심 내용",
         "details": "상세 설명",
         "quiz": "복습 문제",
+        "quiz_answer": "정답/해설 보기",
+        "quiz_no_answer": "정답이 제공되지 않았습니다.",
         "glossary": "다국어 용어 사전",
         "references": "지식베이스 참고 내용",
         "empty": "표시할 내용이 없습니다.",
@@ -262,6 +264,8 @@ TEXT = {
         "key_points": "Exam key points",
         "details": "Detailed explanation",
         "quiz": "Review questions",
+        "quiz_answer": "Show answer / explanation",
+        "quiz_no_answer": "No answer was provided.",
         "glossary": "Multilingual glossary",
         "references": "Knowledge base references",
         "empty": "No content to display.",
@@ -348,6 +352,8 @@ TEXT = {
         "key_points": "考试重点",
         "details": "详细说明",
         "quiz": "复习题",
+        "quiz_answer": "查看答案/解析",
+        "quiz_no_answer": "未提供答案。",
         "glossary": "多语言术语表",
         "references": "知识库参考内容",
         "empty": "没有可显示的内容。",
@@ -529,9 +535,57 @@ def show_list(ui_language: str, title_key: str, value) -> None:
 
     if items:
         for item in items:
-            st.markdown(f"- {item}")
+            st.markdown(f"- {format_math_text(item)}")
     else:
         st.info(t(ui_language, "empty"))
+
+
+def format_math_text(text: str) -> str:
+    formatted = safe_string(text)
+    replacements = {
+        "\\\\frac": "\\frac",
+        "\\\\omega": "\\omega",
+        "\\\\Phi": "\\Phi",
+        "\\\\theta": "\\theta",
+        "\\\\lambda": "\\lambda",
+        "\\\\alpha": "\\alpha",
+        "\\\\beta": "\\beta",
+        "\\\\gamma": "\\gamma",
+    }
+    for source, target in replacements.items():
+        formatted = formatted.replace(source, target)
+    return formatted
+
+
+def show_quiz(ui_language: str, value) -> None:
+    st.subheader(t(ui_language, "quiz"))
+    quiz_items = safe_list(value)
+
+    if not quiz_items:
+        st.info(t(ui_language, "empty"))
+        return
+
+    for index, item in enumerate(quiz_items, start=1):
+        if isinstance(item, dict):
+            question = safe_string(item.get("question"))
+            answer = safe_string(item.get("answer"))
+            explanation = safe_string(item.get("explanation"))
+        else:
+            question = safe_string(item)
+            answer = ""
+            explanation = ""
+
+        if not question and not answer:
+            continue
+
+        st.markdown(f"**{index}. {format_math_text(question or t(ui_language, 'quiz'))}**")
+        with st.expander(t(ui_language, "quiz_answer")):
+            if answer:
+                st.markdown(format_math_text(answer))
+            else:
+                st.info(t(ui_language, "quiz_no_answer"))
+            if explanation:
+                st.markdown(format_math_text(explanation))
 
 
 def show_knowledge_references(ui_language: str, value) -> None:
@@ -757,10 +811,10 @@ def show_analysis_result(ui_language: str, result: dict) -> None:
     show_knowledge_references(ui_language, safe_result.get("knowledge_references", []))
 
     st.subheader(t(ui_language, "details"))
-    st.write(safe_string(safe_result.get("details")) or t(ui_language, "empty"))
+    st.markdown(format_math_text(safe_string(safe_result.get("details")) or t(ui_language, "empty")))
 
     show_glossary(ui_language, safe_result.get("glossary", []))
-    show_list(ui_language, "quiz", safe_result.get("quiz", []))
+    show_quiz(ui_language, safe_result.get("quiz", []))
 
 
 def show_ai_settings_sidebar(ui_language: str) -> tuple[str, str]:
