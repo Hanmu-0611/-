@@ -22,7 +22,7 @@ PROJECT_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = PROJECT_DIR / "uploaded_files"
 ENV_FILE = PROJECT_DIR / ".env"
 ENV_EXAMPLE_FILE = PROJECT_DIR / ".env.example"
-DEFAULT_ENV_CONTENT = """OPENROUTER_API_KEY=여기에_API_KEY_입력
+DEFAULT_ENV_CONTENT = """OPENROUTER_API_KEY=
 OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
 OLLAMA_MODEL=qwen2.5:7b
 """

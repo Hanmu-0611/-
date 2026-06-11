@@ -72,7 +72,7 @@ ollama pull qwen2.5:7b
 
 ## 5. OpenRouter API 키 설정
 
-앱을 처음 실행하면 프로젝트 폴더에 `.env` 파일이 자동으로 만들어집니다.
+프로젝트 폴더에 기본 `.env` 파일을 미리 만들어두었습니다.
 
 환경 파일은 두 종류가 있습니다.
 
@@ -86,7 +86,7 @@ ollama pull qwen2.5:7b
 생성된 `.env` 파일을 열고 아래 값만 수정하면 됩니다.
 
 ```text
-OPENROUTER_API_KEY=여기에_API_KEY_입력
+OPENROUTER_API_KEY=
 OPENROUTER_MODEL=사용할_모델명_입력
 OLLAMA_MODEL=qwen2.5:7b
 ```
@@ -96,7 +96,7 @@ OLLAMA_MODEL=qwen2.5:7b
 모델명을 비워두면 기본 무료 모델을 사용합니다.
 
 ```text
-OPENROUTER_API_KEY=여기에_API_KEY_입력
+OPENROUTER_API_KEY=
 OPENROUTER_MODEL=
 ```
 
