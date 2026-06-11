@@ -180,6 +180,12 @@ def show_pdf_source_inventory(result: dict) -> None:
     col3.metric("OCR 사용 페이지", ocr_info.get("pages_used", 0))
 
     if ocr_info.get("errors"):
+        st.warning(
+            "일부 페이지에서 PDF 내부 글자 인코딩이 깨졌지만 OCR을 실행하지 못했습니다. "
+            "로컬 컴퓨터에 Tesseract OCR을 설치하면 숫자/공식 영역을 더 잘 복구할 수 있습니다."
+        )
+
+    if ocr_info.get("errors"):
         with st.expander("OCR 상태"):
             for item in safe_list(ocr_info.get("errors")):
                 if isinstance(item, dict):

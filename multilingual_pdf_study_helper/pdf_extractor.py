@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import re
 
 from pypdf import PdfReader
@@ -12,8 +13,16 @@ except ImportError:
     pytesseract = None
     Image = None
 
+USE_MACOS_VISION_OCR = os.getenv("USE_MACOS_VISION_OCR", "").lower() in {"1", "true", "yes"}
+
+try:
+    from ocrmac import ocrmac as mac_ocr
+except ImportError:
+    mac_ocr = None
+
 
 OCR_LANGUAGES = "eng+chi_sim+kor"
+GARBLE_CHARS = "�ØßÕÜÛÐÑÃÂÅÄ€Þ"
 MATH_SYMBOL_REPLACEMENTS = {
     "−": "-",
     "–": "-",
@@ -91,11 +100,52 @@ def normalize_math_text(text: str) -> str:
     return normalized
 
 
+def garble_ratio(text: str) -> float:
+    if not text:
+        return 0.0
+    garbled = sum(1 for char in text if char in GARBLE_CHARS)
+    return garbled / max(len(text), 1)
+
+
+def is_garbled_text(text: str) -> bool:
+    if not text:
+        return False
+    if text.count("�") >= 2:
+        return True
+    if len(re.findall(r"[ØÕÜÛß]{2,}", text)) >= 2:
+        return True
+    return garble_ratio(text) >= 0.08
+
+
+def clean_garbled_line(line: str) -> str:
+    line = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", " ", line)
+
+    if not is_garbled_text(line):
+        line = re.sub(r"[ØÕÜÛßÐÑÃÂÅÄ€Þ�][A-Za-z0-9ØÕÜÛßÐÑÃÂÅÄ€Þ�_<>|=+\-*/^]*", "[변수 인코딩 깨짐]", line)
+        return re.sub(r"\s+", " ", line).strip()
+
+    readable = re.sub(r"[ØÕÜÛßÐÑÃÂÅÄ€Þ�]+[A-Za-z0-9ØÕÜÛßÐÑÃÂÅÄ€Þ�_<>|=+\-*/^ ]*", " ", line)
+    readable = re.sub(r"\s+", " ", readable).strip(" -•·")
+
+    if len(readable) >= 8 and garble_ratio(readable) < 0.03:
+        return f"{readable} [공식/숫자 인코딩 깨짐 - OCR 필요]"
+
+    return "[공식/숫자 인코딩 깨짐 - OCR 필요]"
+
+
+def remove_garbled_lines(text: str) -> str:
+    cleaned_lines = []
+    for line in (text or "").splitlines():
+        cleaned_lines.append(clean_garbled_line(line))
+    return "\n".join(cleaned_lines)
+
+
 def clean_text(text: str) -> str:
     text = normalize_math_text(text)
     text = re.sub(r"[ \t]+\n", "\n", text or "")
     text = re.sub(r"\n\s*([+\-*/=<>])\s*\n", r" \1 ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
+    text = remove_garbled_lines(text)
     return text.strip()
 
 
@@ -117,6 +167,8 @@ def text_quality_score(text: str) -> int:
     score += len(re.findall(r"[=+\-*/^_<>]|sqrt|lambda|sigma|alpha|beta", cleaned)) * 4
     score -= cleaned.count("�") * 30
     score -= cleaned.count("□") * 20
+    score -= len(re.findall(r"[ØÕÜÛß]{2,}", cleaned)) * 25
+    score -= cleaned.count("인코딩 깨짐") * 80
     return score
 
 
@@ -167,15 +219,56 @@ def split_paragraphs(text: str) -> list[str]:
 
 def ocr_page(file_path: str, page_index: int) -> tuple[str, str]:
     """OCR one PDF page. Return extracted text and an error message."""
-    if fitz is None or pytesseract is None or Image is None:
-        return "", "OCR 라이브러리가 설치되어 있지 않습니다."
+    if fitz is None or Image is None:
+        return "", "OCR 이미지 처리 라이브러리가 설치되어 있지 않습니다."
 
     try:
         with fitz.open(file_path) as document:
             page = document.load_page(page_index)
-            pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(3, 3), alpha=False)
             image = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
-            return clean_text(pytesseract.image_to_string(image, lang=OCR_LANGUAGES)), ""
+
+        if pytesseract is not None:
+            try:
+                pytesseract.get_tesseract_version()
+                text = pytesseract.image_to_string(image, lang=OCR_LANGUAGES)
+                if text.strip():
+                    return clean_text(text), ""
+            except Exception:
+                pass
+
+        if USE_MACOS_VISION_OCR and mac_ocr is not None:
+            mac_errors = []
+            for framework in ("vision", "livetext"):
+                try:
+                    results = mac_ocr.OCR(
+                        image,
+                        framework=framework,
+                        language_preference=["ko-KR", "zh-Hans", "en-US"],
+                        detail=True,
+                    ).recognize()
+                    text = "\n".join(item[0] for item in results if item and item[0])
+                    if text.strip():
+                        return clean_text(text), ""
+                except Exception as error:
+                    mac_errors.append(f"{framework}: {error}")
+
+            try:
+                results = mac_ocr.OCR(
+                    image,
+                    language_preference=["ko-KR", "zh-Hans", "en-US"],
+                    detail=True,
+                ).recognize()
+                text = "\n".join(item[0] for item in results if item and item[0])
+                if text.strip():
+                    return clean_text(text), ""
+            except Exception as error:
+                mac_errors.append(f"default: {error}")
+
+            if mac_errors:
+                return "", "macOS OCR 오류: " + " | ".join(mac_errors)
+
+        return "", "OCR 엔진을 찾을 수 없습니다. Tesseract OCR 설치가 필요합니다."
     except Exception as error:
         return "", str(error)
 
@@ -222,8 +315,9 @@ def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
             text = choose_best_page_text(pypdf_text, fitz_text)
 
             extraction_method = "pdf_text"
+            needs_ocr = len(text) < 20 or is_garbled_text(pypdf_text) or is_garbled_text(fitz_text) or "인코딩 깨짐" in text
 
-            if use_ocr and len(text) < 20:
+            if use_ocr and needs_ocr:
                 ocr_text, ocr_error = ocr_page(str(path), page_index - 1)
                 if ocr_text:
                     text = ocr_text
@@ -231,6 +325,8 @@ def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
                     ocr_pages_used += 1
                 elif ocr_error:
                     ocr_errors.append({"page": page_index, "error": ocr_error})
+                    if "인코딩 깨짐" not in text:
+                        text = remove_garbled_lines(text)
 
             paragraphs = split_paragraphs(text)
             for paragraph_index, paragraph in enumerate(paragraphs, start=1):
@@ -268,8 +364,9 @@ def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
         "pages": page_items,
         "knowledge_entries": knowledge_entries,
         "ocr": {
-            "enabled": fitz is not None and pytesseract is not None and Image is not None,
+            "enabled": fitz is not None and Image is not None and pytesseract is not None,
             "languages": OCR_LANGUAGES,
+            "macos_vision_available": USE_MACOS_VISION_OCR and mac_ocr is not None,
             "pages_used": ocr_pages_used,
             "errors": ocr_errors[:10],
         },
