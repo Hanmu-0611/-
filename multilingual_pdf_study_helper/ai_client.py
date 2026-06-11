@@ -447,7 +447,7 @@ def request_chat_completion(
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:8501",
+            "HTTP-Referer": "http://localhost:8502",
             "X-Title": "Multilingual PDF Study Helper",
         },
         json=payload,

@@ -28,7 +28,7 @@ cd multilingual_pdf_study_helper
 
 ```bash
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run app.py --server.port 8502
 ```
 
 실행 후 브라우저에서 `http://localhost:8502` 주소로 접속합니다.
@@ -45,7 +45,7 @@ File does not exist: app.py
 `streamlit` 명령어가 인식되지 않으면 아래 명령어를 사용해도 됩니다.
 
 ```bash
-python -m streamlit run app.py
+python -m streamlit run app.py --server.port 8502
 ```
 
 ## 4. AI 모드 선택

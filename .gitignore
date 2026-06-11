@@ -3,5 +3,7 @@ __pycache__/
 *.pyc
 knowledge_base.jsonl
 .env
-.streamlit/
+**/.streamlit/*
+!**/.streamlit/
+!**/.streamlit/config.toml
 uploaded_files/
