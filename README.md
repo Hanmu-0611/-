@@ -7,6 +7,7 @@ API 키가 없어도 앱 실행, PDF 업로드, PDF 텍스트 추출, 출처 지
 ## 실행 방법
 
 최종 앱은 `multilingual_pdf_study_helper` 폴더 안에 있습니다.
+터미널을 열고 아래 명령어를 입력합니다.
 
 ```bash
 cd multilingual_pdf_study_helper
