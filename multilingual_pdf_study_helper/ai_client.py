@@ -161,8 +161,8 @@ Important language rules:
 - If Korean only is selected, write Korean only.
 - If English only is selected, write English only.
 - If Chinese only is selected, write Chinese only.
-- In glossary items, leave fields for unselected languages empty.
-- The "english" glossary field may contain the original technical term only when useful for studying.
+- Exception: the glossary is always multilingual. Fill english, korean, and chinese for every glossary item.
+- In the glossary explanation field, use the selected output language(s).
 
 Technical term handling:
 {safe_string(term_mode)}
@@ -171,28 +171,38 @@ Accuracy rules:
 - Preserve numbers, formulas, variables, symbols, and notation as much as possible.
 - If a formula is unclear or incomplete in the extracted PDF text, say that the original formula needs checking.
 - If no formula is found, write that no formula was extracted.
-- Prefer concise, exam-useful explanations.
+- Be detailed enough that a student can actually study from the result.
 - When knowledge-base references are provided, use them only when they are relevant to the PDF.
+- Do not stop after a short summary. Explain relationships between concepts, why they matter, and how they are used.
+
+Depth requirements:
+- concepts: provide 5 to 8 items when the PDF has enough content.
+- formulas: provide 3 to 8 formulas or definitions when available. If few formulas exist, include important definitions instead.
+- key_points: provide 5 to 10 exam-oriented points.
+- details: write 4 to 8 substantial paragraphs or bullet-style paragraphs.
+- glossary: provide 8 to 15 important terms when possible, always with english, korean, and chinese filled.
+- quiz: provide 5 to 10 review questions, including at least 2 conceptual questions and 2 application/problem-solving questions when possible.
+- knowledge_references: include the relevant references you actually used, and briefly explain why each is relevant.
 
 Return JSON only. Do not use Markdown code fences.
 
 {{
   "title": "document title or topic",
-  "concepts": ["key concept 1", "key concept 2"],
-  "formulas": ["formula or definition 1", "formula or definition 2"],
-  "key_points": ["exam key point 1", "exam key point 2"],
+  "concepts": ["key concept 1 with a useful explanation", "key concept 2 with a useful explanation"],
+  "formulas": ["formula or definition 1 with context", "formula or definition 2 with context"],
+  "key_points": ["exam key point 1 with why it matters", "exam key point 2 with why it matters"],
   "knowledge_references": [
     {{
       "title": "reference title",
-      "content": "reference content"
+      "content": "reference content and why it is relevant"
     }}
   ],
-  "details": "detailed explanation",
+  "details": "detailed explanation with enough depth for studying",
   "glossary": [
     {{
       "english": "Linear Independence",
       "korean": "선형독립",
-      "chinese": "",
+      "chinese": "线性无关",
       "explanation": "short explanation in the selected output language"
     }}
   ],
