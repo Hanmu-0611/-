@@ -1,6 +1,6 @@
 from ai_client import call_openrouter_ai
 from knowledge_base import search_knowledge_base
-from pdf_extractor import extract_text_from_pdf
+from pdf_extractor import extract_pdf_document
 from safe_utils import normalize_result, safe_string
 
 
@@ -18,7 +18,8 @@ PDF_PREVIEW_LENGTH = 2000
 def analyze_pdf(file_path: str, target_language: str, term_mode: str) -> dict:
     """Run the full PDF study-analysis workflow without crashing Streamlit."""
     try:
-        pdf_text = extract_text_from_pdf(file_path)
+        pdf_document = extract_pdf_document(file_path)
+        pdf_text = pdf_document.get("text", "")
     except Exception as error:
         return normalize_result(
             {
@@ -47,6 +48,10 @@ def analyze_pdf(file_path: str, target_language: str, term_mode: str) -> dict:
         "pdf_text_preview": safe_string(pdf_text)[:PDF_PREVIEW_LENGTH],
         "pdf_text_length": len(safe_string(pdf_text)),
         "knowledge_search_count": len(knowledge_results),
+        "pdf_pages": pdf_document.get("pages", []),
+        "source_knowledge_entries": pdf_document.get("knowledge_entries", []),
+        "source_knowledge_count": len(pdf_document.get("knowledge_entries", [])),
+        "ocr": pdf_document.get("ocr", {}),
     }
 
     try:

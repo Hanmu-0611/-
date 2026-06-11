@@ -2,3 +2,6 @@ streamlit
 pypdf
 openai
 python-dotenv
+PyMuPDF
+pytesseract
+Pillow

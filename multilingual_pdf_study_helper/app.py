@@ -1,5 +1,6 @@
 from pathlib import Path
 from uuid import uuid4
+import json
 
 import streamlit as st
 
@@ -113,6 +114,94 @@ def show_knowledge_references(value) -> None:
             st.write(content or "내용이 없습니다.")
 
 
+def build_source_markdown(entries) -> str:
+    lines = ["# PDF 출처 지식베이스", ""]
+    for index, entry in enumerate(safe_list(entries), start=1):
+        if not isinstance(entry, dict):
+            continue
+
+        source = entry.get("source") if isinstance(entry.get("source"), dict) else {}
+        lines.extend(
+            [
+                f"## {index}. {safe_string(entry.get('title')) or '지식 항목'}",
+                f"- 출처: {safe_string(source.get('label'))}",
+                "",
+                safe_string(entry.get("content")),
+                "",
+            ]
+        )
+    return "\n".join(lines).strip()
+
+
+def show_pdf_source_inventory(result: dict) -> None:
+    st.subheader("PDF 출처 지식베이스")
+
+    entries = safe_list(result.get("source_knowledge_entries"))
+    pages = safe_list(result.get("pdf_pages"))
+    ocr_info = result.get("ocr") if isinstance(result.get("ocr"), dict) else {}
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("PDF 페이지", len(pages))
+    col2.metric("출처 항목", len(entries))
+    col3.metric("OCR 사용 페이지", ocr_info.get("pages_used", 0))
+
+    if ocr_info.get("errors"):
+        with st.expander("OCR 상태"):
+            for item in safe_list(ocr_info.get("errors")):
+                if isinstance(item, dict):
+                    st.caption(f"{item.get('page')}페이지: {item.get('error')}")
+
+    if pages:
+        with st.expander("페이지별 추출 상태"):
+            st.table(
+                [
+                    {
+                        "Page": page.get("page"),
+                        "Method": page.get("extraction_method"),
+                        "Characters": page.get("char_count"),
+                        "Paragraphs": page.get("paragraph_count"),
+                    }
+                    for page in pages
+                    if isinstance(page, dict)
+                ]
+            )
+
+    if not entries:
+        st.info("PDF에서 출처 지식베이스 항목을 만들 수 없습니다.")
+        return
+
+    keyword = st.text_input("출처 지식베이스 검색", placeholder="키워드를 입력하세요")
+    keyword_lower = safe_string(keyword).lower().strip()
+    filtered_entries = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        searchable = f"{entry.get('title', '')} {entry.get('content', '')}".lower()
+        if keyword_lower and keyword_lower not in searchable:
+            continue
+        filtered_entries.append(entry)
+
+    st.write(f"표시 중인 출처 항목: {len(filtered_entries)}개")
+    for entry in filtered_entries[:30]:
+        source = entry.get("source") if isinstance(entry.get("source"), dict) else {}
+        with st.expander(safe_string(source.get("label")) or safe_string(entry.get("title"))):
+            st.write(safe_string(entry.get("content")))
+
+    source_markdown = build_source_markdown(entries)
+    st.download_button(
+        "출처 지식베이스 Markdown 다운로드",
+        data=source_markdown,
+        file_name="pdf_source_knowledge_base.md",
+        mime="text/markdown",
+    )
+    st.download_button(
+        "출처 지식베이스 JSON 다운로드",
+        data=json.dumps(entries, ensure_ascii=False, indent=2),
+        file_name="pdf_source_knowledge_base.json",
+        mime="application/json",
+    )
+
+
 def show_glossary(value) -> None:
     st.subheader("다국어 용어 사전")
     glossary = safe_list(value)
@@ -172,6 +261,7 @@ def show_analysis_result(result: dict) -> None:
 
     st.header(safe_result.get("title", "분석 결과"))
     show_local_processing_result(safe_result)
+    show_pdf_source_inventory(safe_result)
     show_list("주요 개념", safe_result.get("concepts", []))
     show_list("공식/정의", safe_result.get("formulas", []))
     show_list("시험 핵심 내용", safe_result.get("key_points", []))
