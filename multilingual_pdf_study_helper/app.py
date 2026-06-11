@@ -32,6 +32,226 @@ AI_PROVIDER_OPTIONS = {
 }
 
 
+CLEAN_AI_PROVIDER_OPTIONS = {
+    "local": {
+        "ko": "로컬 분석만 사용 (API Key 없음)",
+        "en": "Local analysis only (no API key)",
+        "zh": "仅使用本地分析（无需 API Key）",
+    },
+    "ollama": {
+        "ko": "Ollama 로컬 AI 사용 (API Key 없음)",
+        "en": "Use local Ollama AI (no API key)",
+        "zh": "使用本地 Ollama AI（无需 API Key）",
+    },
+    "openrouter": {
+        "ko": "OpenRouter 온라인 AI 사용",
+        "en": "Use OpenRouter online AI",
+        "zh": "使用 OpenRouter 在线 AI",
+    },
+}
+
+UI_LANGUAGE_OPTIONS = {
+    "ko": "한국어",
+    "en": "English",
+    "zh": "中文",
+}
+
+TARGET_LANGUAGE_OPTIONS = {
+    "English": {"ko": "English", "en": "English", "zh": "English"},
+    "Korean": {"ko": "한국어", "en": "Korean", "zh": "韩语"},
+    "Chinese": {"ko": "中文", "en": "Chinese", "zh": "中文"},
+    "English + Korean": {
+        "ko": "English + 한국어",
+        "en": "English + Korean",
+        "zh": "English + 韩语",
+    },
+    "English + Chinese": {
+        "ko": "English + 中文",
+        "en": "English + Chinese",
+        "zh": "English + 中文",
+    },
+    "Korean + Chinese": {
+        "ko": "한국어 + 中文",
+        "en": "Korean + Chinese",
+        "zh": "韩语 + 中文",
+    },
+    "English + Korean + Chinese": {
+        "ko": "English + 한국어 + 中文",
+        "en": "English + Korean + Chinese",
+        "zh": "English + 韩语 + 中文",
+    },
+}
+
+TERM_MODE_OPTIONS = {
+    "Keep English terms": {
+        "ko": "영어 원어 유지",
+        "en": "Keep English terms",
+        "zh": "保留英文术语",
+    },
+    "English terms with translations": {
+        "ko": "영어 + 번역 병기",
+        "en": "English terms with translations",
+        "zh": "英文术语 + 翻译并列",
+    },
+    "Translate all terms": {
+        "ko": "모두 번역",
+        "en": "Translate all terms",
+        "zh": "全部翻译",
+    },
+}
+
+UI_TEXT = {
+    "ko": {
+        "ui_language": "사이트 언어",
+        "title": "다국어 PDF 지식베이스 학습 도우미 AI",
+        "intro": "외국어 강의자료 PDF를 업로드하면 AI가 PDF 내용을 자동으로 추출하고, 지식베이스를 참고해 핵심 개념, 공식, 상세 설명, 복습 문제, 다국어 용어 사전을 정리해줍니다.",
+        "upload_pdf": "PDF 파일 업로드",
+        "target_language": "설명 언어 선택",
+        "target_language_help": "중국어는 언어 선택 목록에서 中文으로 표시됩니다.",
+        "term_mode": "전공 용어 처리 방식 선택",
+        "start": "분석 시작",
+        "upload_first": "PDF 파일을 먼저 업로드해주세요.",
+        "invalid_pdf": "올바른 PDF 파일이 아닙니다. 확장자와 파일 형식을 확인해주세요.",
+        "spinner_local": "PDF를 읽고 로컬 분석을 진행하고 있습니다...",
+        "spinner_ollama": "PDF를 읽고 Ollama 로컬 AI 분석을 진행하고 있습니다...",
+        "spinner_openrouter": "PDF를 읽고 OpenRouter AI 분석을 진행하고 있습니다...",
+        "unexpected_error": "분석 중 예상하지 못한 오류가 발생했습니다",
+        "try_again": "작업은 계속 실행됩니다. 다른 PDF로 다시 시도해주세요.",
+        "analysis_error": "분석 중 오류가 발생했습니다.",
+        "ai_mode": "AI 모드",
+        "analysis_method": "분석 방식 선택",
+        "local_ready": "API Key 없이 로컬 분석을 사용합니다.",
+        "local_caption": "PDF 추출, 출처 지식베이스, 자동 검색, 다운로드 기능을 사용할 수 있습니다.",
+        "ollama_ready": "OpenRouter API Key 없이 로컬 Ollama를 사용합니다.",
+        "ollama_settings": "Ollama 로컬 AI 설정",
+        "ollama_model": "Ollama 모델",
+        "save_ollama_model": "Ollama 모델 저장",
+        "saved": "저장했습니다. 다시 분석을 실행해주세요.",
+        "test_ollama": "Ollama 연결 테스트",
+        "checking_ollama": "Ollama 연결을 확인하는 중입니다...",
+        "ollama_success": "Ollama 연결 성공! 로컬 AI 분석을 사용할 수 있습니다.",
+        "ollama_fail": "Ollama 연결에 실패했습니다.",
+        "ollama_hint": "Ollama 앱을 설치/실행한 뒤 모델을 내려받아야 합니다.",
+        "ollama_pull_hint": "예: ollama pull qwen2.5:7b 실행 후 사용합니다.",
+        "openrouter_status": "OpenRouter 상태",
+        "current_model": "현재 AI 모델",
+        "api_key_set": "API Key가 설정되어 있습니다.",
+        "api_key_invalid": "저장된 API Key 형식이 OpenRouter 형식이 아닙니다.",
+        "api_key_missing": "API Key가 없어 AI 요약은 건너뛰고 로컬 분석만 사용합니다.",
+        "api_settings": "API Key / 모델 설정",
+        "openrouter_model": "OpenRouter 모델",
+        "save_api_settings": "API 설정 저장",
+        "api_key_hint": "OpenRouter API Key는 보통 sk-or-v1- 로 시작합니다. 다시 확인해주세요.",
+        "default_model_caption": "OPENROUTER_MODEL이 비어 있거나 기본값이라 기본 무료 모델을 사용합니다.",
+        "env_model_caption": ".env에 설정된 모델명을 사용합니다.",
+        "test_openrouter": "OpenRouter 연결 테스트",
+        "checking_openrouter": "OpenRouter 연결을 확인하는 중입니다...",
+        "openrouter_success": "OpenRouter 연결 성공! AI 분석을 사용할 수 있습니다.",
+        "openrouter_fail": "OpenRouter 연결에 실패했습니다. API 키, 모델명, 인터넷 연결을 확인해주세요.",
+    },
+    "en": {
+        "ui_language": "Site language",
+        "title": "Multilingual PDF Knowledge Base Study Assistant AI",
+        "intro": "Upload a foreign-language lecture PDF, and the app extracts text, checks the knowledge base, and organizes key concepts, formulas, explanations, review questions, and a multilingual glossary.",
+        "upload_pdf": "Upload PDF file",
+        "target_language": "Explanation language",
+        "target_language_help": "Chinese is displayed as 中文 in the language options.",
+        "term_mode": "Technical term handling",
+        "start": "Start analysis",
+        "upload_first": "Please upload a PDF file first.",
+        "invalid_pdf": "This is not a valid PDF file. Please check the extension and file format.",
+        "spinner_local": "Reading the PDF and running local analysis...",
+        "spinner_ollama": "Reading the PDF and running Ollama local AI analysis...",
+        "spinner_openrouter": "Reading the PDF and running OpenRouter AI analysis...",
+        "unexpected_error": "An unexpected error occurred during analysis",
+        "try_again": "The app is still running. Please try again with another PDF.",
+        "analysis_error": "An error occurred during analysis.",
+        "ai_mode": "AI mode",
+        "analysis_method": "Analysis method",
+        "local_ready": "Using local analysis without an API key.",
+        "local_caption": "PDF extraction, source knowledge base, automatic search, and downloads are available.",
+        "ollama_ready": "Using local Ollama without an OpenRouter API key.",
+        "ollama_settings": "Ollama local AI settings",
+        "ollama_model": "Ollama model",
+        "save_ollama_model": "Save Ollama model",
+        "saved": "Saved. Please run the analysis again.",
+        "test_ollama": "Test Ollama connection",
+        "checking_ollama": "Checking Ollama connection...",
+        "ollama_success": "Ollama connected! Local AI analysis is available.",
+        "ollama_fail": "Ollama connection failed.",
+        "ollama_hint": "Install/run Ollama and pull the model first.",
+        "ollama_pull_hint": "Example: run ollama pull qwen2.5:7b before using it.",
+        "openrouter_status": "OpenRouter status",
+        "current_model": "Current AI model",
+        "api_key_set": "API key is configured.",
+        "api_key_invalid": "The saved API key is not in the OpenRouter format.",
+        "api_key_missing": "No API key found. AI summary will be skipped and local analysis will be used.",
+        "api_settings": "API key / model settings",
+        "openrouter_model": "OpenRouter model",
+        "save_api_settings": "Save API settings",
+        "api_key_hint": "OpenRouter API keys usually start with sk-or-v1-. Please check again.",
+        "default_model_caption": "OPENROUTER_MODEL is empty or default, so the default free model is used.",
+        "env_model_caption": "Using the model name set in .env.",
+        "test_openrouter": "Test OpenRouter connection",
+        "checking_openrouter": "Checking OpenRouter connection...",
+        "openrouter_success": "OpenRouter connected! AI analysis is available.",
+        "openrouter_fail": "OpenRouter connection failed. Check the API key, model name, and internet connection.",
+    },
+    "zh": {
+        "ui_language": "网站语言",
+        "title": "多语言 PDF 知识库学习助手 AI",
+        "intro": "上传外语课程 PDF 后，应用会自动提取内容，参考知识库整理核心概念、公式、详细说明、复习题和多语言术语表。",
+        "upload_pdf": "上传 PDF 文件",
+        "target_language": "说明语言",
+        "target_language_help": "语言选项中的中文会显示为 中文。",
+        "term_mode": "专业术语处理方式",
+        "start": "开始分析",
+        "upload_first": "请先上传 PDF 文件。",
+        "invalid_pdf": "这不是有效的 PDF 文件。请检查扩展名和文件格式。",
+        "spinner_local": "正在读取 PDF 并进行本地分析...",
+        "spinner_ollama": "正在读取 PDF 并进行 Ollama 本地 AI 分析...",
+        "spinner_openrouter": "正在读取 PDF 并进行 OpenRouter AI 分析...",
+        "unexpected_error": "分析过程中发生了意外错误",
+        "try_again": "应用会继续运行。请尝试使用其他 PDF。",
+        "analysis_error": "分析过程中发生错误。",
+        "ai_mode": "AI 模式",
+        "analysis_method": "选择分析方式",
+        "local_ready": "无需 API Key，使用本地分析。",
+        "local_caption": "可以使用 PDF 提取、来源知识库、自动搜索和下载功能。",
+        "ollama_ready": "无需 OpenRouter API Key，使用本地 Ollama。",
+        "ollama_settings": "Ollama 本地 AI 设置",
+        "ollama_model": "Ollama 模型",
+        "save_ollama_model": "保存 Ollama 模型",
+        "saved": "已保存。请重新运行分析。",
+        "test_ollama": "测试 Ollama 连接",
+        "checking_ollama": "正在检查 Ollama 连接...",
+        "ollama_success": "Ollama 连接成功！可以使用本地 AI 分析。",
+        "ollama_fail": "Ollama 连接失败。",
+        "ollama_hint": "请先安装/运行 Ollama 并下载模型。",
+        "ollama_pull_hint": "例如：运行 ollama pull qwen2.5:7b 后再使用。",
+        "openrouter_status": "OpenRouter 状态",
+        "current_model": "当前 AI 模型",
+        "api_key_set": "API Key 已设置。",
+        "api_key_invalid": "保存的 API Key 不是 OpenRouter 格式。",
+        "api_key_missing": "没有 API Key，将跳过 AI 摘要并只使用本地分析。",
+        "api_settings": "API Key / 模型设置",
+        "openrouter_model": "OpenRouter 模型",
+        "save_api_settings": "保存 API 设置",
+        "api_key_hint": "OpenRouter API Key 通常以 sk-or-v1- 开头。请重新确认。",
+        "default_model_caption": "OPENROUTER_MODEL 为空或为默认值，因此使用默认免费模型。",
+        "env_model_caption": "使用 .env 中设置的模型名称。",
+        "test_openrouter": "测试 OpenRouter 连接",
+        "checking_openrouter": "正在检查 OpenRouter 连接...",
+        "openrouter_success": "OpenRouter 连接成功！可以使用 AI 分析。",
+        "openrouter_fail": "OpenRouter 连接失败。请检查 API Key、模型名称和网络连接。",
+    },
+}
+
+
+def get_ui_text(ui_language: str, key: str) -> str:
+    return UI_TEXT.get(ui_language, UI_TEXT["ko"]).get(key, UI_TEXT["ko"].get(key, key))
+
+
 def ensure_upload_dir() -> bool:
     """Create the upload directory if it is missing."""
     try:
@@ -555,6 +775,197 @@ def main() -> None:
 
         if safe_result.get("error"):
             st.error(safe_result.get("error", "분석 중 오류가 발생했습니다."))
+
+        show_analysis_result(safe_result)
+
+
+def show_ai_settings_sidebar_i18n(ui_language: str) -> tuple[str, str]:
+    text = lambda key: get_ui_text(ui_language, key)
+
+    st.sidebar.header(text("ai_mode"))
+
+    selected_provider = st.sidebar.selectbox(
+        text("analysis_method"),
+        list(CLEAN_AI_PROVIDER_OPTIONS.keys()),
+        format_func=lambda key: CLEAN_AI_PROVIDER_OPTIONS[key][ui_language],
+    )
+
+    if selected_provider == "local":
+        st.sidebar.success(text("local_ready"))
+        st.sidebar.caption(text("local_caption"))
+        return selected_provider, ""
+
+    if selected_provider == "ollama":
+        ollama_info = get_ollama_model_info()
+        ollama_model = safe_string(ollama_info.get("model"))
+        st.sidebar.success(text("ollama_ready"))
+
+        with st.sidebar.expander(text("ollama_settings"), expanded=True):
+            ollama_model_input = st.text_input(
+                text("ollama_model"),
+                value=ollama_model,
+                placeholder="qwen2.5:7b",
+            )
+            if st.button(text("save_ollama_model")):
+                if save_ollama_settings(ollama_model_input):
+                    st.sidebar.success(text("saved"))
+
+            if st.button(text("test_ollama")):
+                with st.sidebar.spinner(text("checking_ollama")):
+                    try:
+                        test_result = test_ollama_connection(ollama_model_input)
+                    except Exception as error:
+                        test_result = {
+                            "success": False,
+                            "message": safe_string(error),
+                        }
+
+                if test_result.get("success"):
+                    st.sidebar.success(text("ollama_success"))
+                else:
+                    st.sidebar.error(text("ollama_fail"))
+                    st.sidebar.caption(text("ollama_hint"))
+                    if test_result.get("message"):
+                        st.sidebar.caption(safe_string(test_result.get("message")))
+
+        st.sidebar.caption(text("ollama_pull_hint"))
+        return selected_provider, safe_string(ollama_model_input).strip() or ollama_model
+
+    st.sidebar.header(text("openrouter_status"))
+
+    model_info = get_current_model_info()
+    model_name = safe_string(model_info.get("model"))
+    current_key = get_openrouter_api_key()
+    st.sidebar.write(f"{text('current_model')}: {model_name}")
+
+    if current_key:
+        if openrouter_key_looks_valid(current_key):
+            st.sidebar.success(text("api_key_set"))
+        else:
+            st.sidebar.error(text("api_key_invalid"))
+    else:
+        st.sidebar.warning(text("api_key_missing"))
+
+    with st.sidebar.expander(text("api_settings")):
+        api_key_input = st.text_input(
+            "OpenRouter API Key",
+            type="password",
+            placeholder="sk-or-...",
+        )
+        model_input = st.text_input(
+            text("openrouter_model"),
+            value=model_name,
+        )
+        if st.button(text("save_api_settings")):
+            key_to_save = api_key_input.strip() or current_key
+            if key_to_save and not openrouter_key_looks_valid(normalize_openrouter_api_key(key_to_save)):
+                st.sidebar.error(text("api_key_hint"))
+                return selected_provider, ""
+            if save_openrouter_settings(key_to_save, model_input):
+                st.sidebar.success(text("saved"))
+
+    if model_info.get("uses_default"):
+        st.sidebar.caption(text("default_model_caption"))
+    else:
+        st.sidebar.caption(text("env_model_caption"))
+
+    if st.sidebar.button(text("test_openrouter")):
+        with st.sidebar.spinner(text("checking_openrouter")):
+            try:
+                test_result = test_openrouter_connection()
+            except Exception as error:
+                test_result = {
+                    "success": False,
+                    "message": safe_string(error),
+                }
+
+        if test_result.get("success"):
+            st.sidebar.success(text("openrouter_success"))
+        else:
+            st.sidebar.error(text("openrouter_fail"))
+            if test_result.get("message"):
+                st.sidebar.caption(safe_string(test_result.get("message")))
+
+    return selected_provider, ""
+
+
+def main() -> None:
+    st.set_page_config(
+        page_title="Multilingual PDF Study Helper AI",
+        page_icon="📘",
+        layout="wide",
+    )
+
+    ensure_upload_dir()
+    ensure_env_file()
+
+    ui_language = st.selectbox(
+        "사이트 언어 / Site language / 网站语言",
+        list(UI_LANGUAGE_OPTIONS.keys()),
+        format_func=lambda key: UI_LANGUAGE_OPTIONS[key],
+    )
+    st.session_state["ui_language"] = ui_language
+    text = lambda key: get_ui_text(ui_language, key)
+
+    ai_provider, ollama_model = show_ai_settings_sidebar_i18n(ui_language)
+
+    st.title(text("title"))
+    st.write(text("intro"))
+
+    uploaded_file = st.file_uploader(text("upload_pdf"), type=["pdf"])
+
+    target_language = st.selectbox(
+        text("target_language"),
+        list(TARGET_LANGUAGE_OPTIONS.keys()),
+        format_func=lambda key: TARGET_LANGUAGE_OPTIONS[key][ui_language],
+    )
+    st.info(text("target_language_help"))
+
+    term_mode = st.selectbox(
+        text("term_mode"),
+        list(TERM_MODE_OPTIONS.keys()),
+        format_func=lambda key: TERM_MODE_OPTIONS[key][ui_language],
+    )
+
+    if st.button(text("start"), type="primary"):
+        if uploaded_file is None:
+            st.warning(text("upload_first"))
+            return
+
+        if not uploaded_file_is_pdf(uploaded_file):
+            st.error(text("invalid_pdf"))
+            return
+
+        file_path = save_uploaded_file(uploaded_file)
+        if file_path is None:
+            return
+
+        if ai_provider == "local":
+            spinner_text = text("spinner_local")
+        elif ai_provider == "ollama":
+            spinner_text = text("spinner_ollama")
+        else:
+            spinner_text = text("spinner_openrouter")
+
+        with st.spinner(spinner_text):
+            try:
+                result = analyze_pdf(
+                    file_path=str(file_path),
+                    target_language=target_language,
+                    term_mode=term_mode,
+                    ai_provider=ai_provider,
+                    ollama_model=ollama_model,
+                )
+            except Exception as error:
+                result = {
+                    "error": f"{text('unexpected_error')}: {error}",
+                    "details": text("try_again"),
+                }
+
+        safe_result = normalize_result(result)
+
+        if safe_result.get("error"):
+            st.error(safe_result.get("error", text("analysis_error")))
 
         show_analysis_result(safe_result)
 
