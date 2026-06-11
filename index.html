@@ -62,6 +62,7 @@
 
       .toolbar,
       .searchbar,
+      .translatebar,
       .actions {
         display: flex;
         flex-wrap: wrap;
@@ -69,7 +70,8 @@
         align-items: center;
       }
 
-      .searchbar {
+      .searchbar,
+      .translatebar {
         margin: 14px 0;
       }
 
@@ -216,6 +218,7 @@
           <select id="viewMode">
             <option value="organized">整理结果</option>
             <option value="knowledge">知识库出处</option>
+            <option value="translated">翻译结果</option>
             <option value="text">原始文本</option>
             <option value="json">JSON 数据</option>
           </select>
@@ -228,6 +231,20 @@
         <div class="searchbar">
           <input id="searchInput" type="search" placeholder="搜索知识库，例如：合同、日期、摘要、关键词" />
           <button id="searchButton" class="secondary">查询出处</button>
+        </div>
+
+        <div class="translatebar">
+          <select id="targetLanguage">
+            <option value="zh-CN">翻译成中文</option>
+            <option value="en">翻译成英文</option>
+            <option value="ko">翻译成韩文</option>
+            <option value="ja">翻译成日文</option>
+            <option value="fr">翻译成法文</option>
+            <option value="de">翻译成德文</option>
+            <option value="es">翻译成西班牙文</option>
+          </select>
+          <button id="translateButton" class="secondary" disabled>翻译当前结果</button>
+          <button id="downloadTranslationButton" class="secondary" disabled>下载翻译稿</button>
         </div>
 
         <div class="actions">
@@ -260,6 +277,9 @@
       const clearButton = document.querySelector("#clearButton");
       const searchButton = document.querySelector("#searchButton");
       const searchInput = document.querySelector("#searchInput");
+      const targetLanguage = document.querySelector("#targetLanguage");
+      const translateButton = document.querySelector("#translateButton");
+      const downloadTranslationButton = document.querySelector("#downloadTranslationButton");
       const viewMode = document.querySelector("#viewMode");
       const output = document.querySelector("#output");
       const statusEl = document.querySelector("#status");
@@ -271,6 +291,7 @@
       let allResults = [];
       let knowledgeEntries = [];
       let selectedFiles = [];
+      let translatedText = "";
 
       function setStatus(text) {
         statusEl.textContent = text;
@@ -292,6 +313,32 @@
           .split(/\n{2,}|(?<=。|！|？|\.)\s+/)
           .map((item) => item.replace(/\s+/g, " ").trim())
           .filter((item) => item.length > 0);
+      }
+
+      function splitForTranslation(text) {
+        const chunks = [];
+        const paragraphs = text.split(/\n{2,}/).map((item) => item.trim()).filter(Boolean);
+        let current = "";
+
+        for (const paragraph of paragraphs) {
+          if ((current + "\n\n" + paragraph).length <= 450) {
+            current = current ? `${current}\n\n${paragraph}` : paragraph;
+            continue;
+          }
+
+          if (current) chunks.push(current);
+          if (paragraph.length <= 450) {
+            current = paragraph;
+          } else {
+            for (let index = 0; index < paragraph.length; index += 450) {
+              chunks.push(paragraph.slice(index, index + 450));
+            }
+            current = "";
+          }
+        }
+
+        if (current) chunks.push(current);
+        return chunks;
       }
 
       function looksLikeHeading(text) {
@@ -450,6 +497,8 @@
         if (!latestResult) return;
         if (viewMode.value === "knowledge") {
           output.value = formatEntries(knowledgeEntries);
+        } else if (viewMode.value === "translated") {
+          output.value = translatedText || "还没有翻译结果。请先点击“翻译当前结果”。";
         } else if (viewMode.value === "text") {
           output.value = allResults.map((result) => `===== ${result.filename} =====\n\n${result.text}`).join("\n\n");
         } else if (viewMode.value === "json") {
@@ -463,6 +512,8 @@
         downloadMdButton.disabled = !hasResult;
         downloadJsonButton.disabled = !hasResult;
         clearButton.disabled = !hasResult;
+        translateButton.disabled = !hasResult;
+        downloadTranslationButton.disabled = !translatedText;
       }
 
       function setFiles(files) {
@@ -486,6 +537,7 @@
         knowledgeList.innerHTML = "";
         allResults = [];
         knowledgeEntries = [];
+        translatedText = "";
 
         let worker = null;
         try {
@@ -556,6 +608,11 @@
         );
       }
 
+      function downloadTranslation() {
+        if (!translatedText) return;
+        downloadText("PDF知识库翻译稿.md", translatedText, "text/markdown;charset=utf-8");
+      }
+
       async function copyCurrentResult() {
         if (!output.value) return;
         await navigator.clipboard.writeText(output.value);
@@ -566,6 +623,7 @@
         latestResult = null;
         allResults = [];
         knowledgeEntries = [];
+        translatedText = "";
         output.value = "";
         knowledgeList.innerHTML = "";
         setProgress(0, 0);
@@ -574,7 +632,50 @@
         downloadMdButton.disabled = true;
         downloadJsonButton.disabled = true;
         clearButton.disabled = true;
+        translateButton.disabled = true;
+        downloadTranslationButton.disabled = true;
         setStatus("已清空。");
+      }
+
+      async function translateChunk(text, target) {
+        const url = new URL("https://api.mymemory.translated.net/get");
+        url.searchParams.set("q", text);
+        url.searchParams.set("langpair", `auto|${target}`);
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("翻译接口暂时不可用。");
+
+        const data = await response.json();
+        return data?.responseData?.translatedText || text;
+      }
+
+      async function translateCurrentResult() {
+        if (!allResults.length) return;
+
+        translateButton.disabled = true;
+        downloadTranslationButton.disabled = true;
+        const originalMode = viewMode.value;
+        const sourceText = allResults.map((result) => result.organized.markdown).join("\n\n---\n\n");
+        const chunks = splitForTranslation(sourceText);
+        const translatedChunks = [];
+
+        try {
+          for (let index = 0; index < chunks.length; index += 1) {
+            setStatus(`正在翻译 ${index + 1} / ${chunks.length}...`);
+            translatedChunks.push(await translateChunk(chunks[index], targetLanguage.value));
+          }
+
+          translatedText = translatedChunks.join("\n\n");
+          viewMode.value = "translated";
+          render();
+          setStatus("翻译完成。");
+        } catch (error) {
+          viewMode.value = originalMode;
+          setStatus(error.message || "翻译失败。");
+        } finally {
+          translateButton.disabled = !allResults.length;
+          downloadTranslationButton.disabled = !translatedText;
+        }
       }
 
       function searchKnowledge() {
@@ -592,6 +693,8 @@
       copyButton.addEventListener("click", copyCurrentResult);
       downloadMdButton.addEventListener("click", downloadMarkdown);
       downloadJsonButton.addEventListener("click", downloadJson);
+      translateButton.addEventListener("click", translateCurrentResult);
+      downloadTranslationButton.addEventListener("click", downloadTranslation);
       clearButton.addEventListener("click", clearKnowledge);
       searchButton.addEventListener("click", searchKnowledge);
       viewMode.addEventListener("change", render);
