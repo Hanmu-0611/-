@@ -14,6 +14,7 @@
         --bg: #f4f6f8;
         --accent: #166534;
         --accent-2: #0f766e;
+        --danger: #b42318;
       }
 
       * {
@@ -60,7 +61,8 @@
       }
 
       .toolbar,
-      .searchbar {
+      .searchbar,
+      .actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
@@ -113,6 +115,10 @@
         background: var(--accent-2);
       }
 
+      button.danger {
+        background: var(--danger);
+      }
+
       button:disabled {
         opacity: 0.55;
         cursor: wait;
@@ -122,6 +128,39 @@
         display: grid;
         grid-template-columns: 1fr 320px;
         gap: 14px;
+      }
+
+      .dropzone {
+        margin: 14px 0;
+        padding: 24px;
+        border: 2px dashed #b8c2d2;
+        border-radius: 8px;
+        background: #fbfcfd;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .dropzone.active {
+        border-color: var(--accent);
+        background: #edf7ef;
+        color: var(--ink);
+      }
+
+      .meter {
+        width: 100%;
+        height: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e7ebf0;
+      }
+
+      .meter span {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: var(--accent);
+        transition: width 160ms ease;
       }
 
       textarea {
@@ -173,7 +212,7 @@
 
       <section class="panel">
         <div class="toolbar">
-          <input id="pdfInput" type="file" accept="application/pdf,.pdf" />
+          <input id="pdfInput" type="file" accept="application/pdf,.pdf" multiple />
           <select id="viewMode">
             <option value="organized">整理结果</option>
             <option value="knowledge">知识库出处</option>
@@ -181,12 +220,21 @@
             <option value="json">JSON 数据</option>
           </select>
           <button id="processButton">提交并整理</button>
-          <button id="downloadButton" class="secondary" disabled>下载整理结果</button>
         </div>
+
+        <div id="dropzone" class="dropzone">把 PDF 拖到这里，或点击上面的文件按钮。支持一次选择多个 PDF。</div>
+        <div class="meter"><span id="progressBar"></span></div>
 
         <div class="searchbar">
           <input id="searchInput" type="search" placeholder="搜索知识库，例如：合同、日期、摘要、关键词" />
           <button id="searchButton" class="secondary">查询出处</button>
+        </div>
+
+        <div class="actions">
+          <button id="copyButton" class="secondary" disabled>复制当前结果</button>
+          <button id="downloadMdButton" class="secondary" disabled>下载 Markdown</button>
+          <button id="downloadJsonButton" class="secondary" disabled>下载 JSON</button>
+          <button id="clearButton" class="danger" disabled>清空知识库</button>
         </div>
 
         <div class="grid">
@@ -206,19 +254,30 @@
 
       const input = document.querySelector("#pdfInput");
       const processButton = document.querySelector("#processButton");
-      const downloadButton = document.querySelector("#downloadButton");
+      const copyButton = document.querySelector("#copyButton");
+      const downloadMdButton = document.querySelector("#downloadMdButton");
+      const downloadJsonButton = document.querySelector("#downloadJsonButton");
+      const clearButton = document.querySelector("#clearButton");
       const searchButton = document.querySelector("#searchButton");
       const searchInput = document.querySelector("#searchInput");
       const viewMode = document.querySelector("#viewMode");
       const output = document.querySelector("#output");
       const statusEl = document.querySelector("#status");
       const knowledgeList = document.querySelector("#knowledgeList");
+      const dropzone = document.querySelector("#dropzone");
+      const progressBar = document.querySelector("#progressBar");
 
       let latestResult = null;
+      let allResults = [];
       let knowledgeEntries = [];
+      let selectedFiles = [];
 
       function setStatus(text) {
         statusEl.textContent = text;
+      }
+
+      function setProgress(done, total) {
+        progressBar.style.width = total ? `${Math.round((done / total) * 100)}%` : "0";
       }
 
       function cleanText(text) {
@@ -392,53 +451,78 @@
         if (viewMode.value === "knowledge") {
           output.value = formatEntries(knowledgeEntries);
         } else if (viewMode.value === "text") {
-          output.value = latestResult.text;
+          output.value = allResults.map((result) => `===== ${result.filename} =====\n\n${result.text}`).join("\n\n");
         } else if (viewMode.value === "json") {
-          output.value = JSON.stringify({ ...latestResult, knowledge_base: knowledgeEntries }, null, 2);
+          output.value = JSON.stringify({ files: allResults, knowledge_base: knowledgeEntries }, null, 2);
         } else {
-          output.value = latestResult.organized.markdown;
+          output.value = allResults.map((result) => result.organized.markdown).join("\n\n---\n\n");
         }
         renderKnowledgeList(knowledgeEntries);
+        const hasResult = allResults.length > 0;
+        copyButton.disabled = !hasResult;
+        downloadMdButton.disabled = !hasResult;
+        downloadJsonButton.disabled = !hasResult;
+        clearButton.disabled = !hasResult;
+      }
+
+      function setFiles(files) {
+        selectedFiles = [...files].filter((file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"));
+        setStatus(selectedFiles.length ? `已选择 ${selectedFiles.length} 个 PDF。` : "请选择 PDF 文件。");
       }
 
       async function processPdf() {
-        const file = input.files[0];
-        if (!file) {
+        const files = selectedFiles.length ? selectedFiles : [...input.files];
+        if (!files.length) {
           setStatus("请选择一个 PDF 文件。");
           return;
         }
 
         processButton.disabled = true;
-        downloadButton.disabled = true;
+        copyButton.disabled = true;
+        downloadMdButton.disabled = true;
+        downloadJsonButton.disabled = true;
+        clearButton.disabled = true;
         output.value = "";
         knowledgeList.innerHTML = "";
+        allResults = [];
+        knowledgeEntries = [];
 
         let worker = null;
         try {
-          setStatus("正在加载 PDF...");
-          const buffer = await file.arrayBuffer();
-          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          setStatus("正在加载 OCR 引擎...");
           worker = await createWorker("eng+chi_sim+kor");
 
-          const pages = [];
-          for (let index = 1; index <= pdf.numPages; index += 1) {
-            setStatus(`正在整理第 ${index} / ${pdf.numPages} 页...`);
-            const page = await pdf.getPage(index);
-            const extracted = await extractPageText(page, index, worker);
-            pages.push({
-              page: index,
-              text: extracted.text,
-              char_count: extracted.text.length,
-              extraction_method: extracted.method,
-            });
+          let completedFiles = 0;
+          for (const file of files) {
+            setStatus(`正在加载 ${file.name}...`);
+            const buffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+
+            const pages = [];
+            for (let index = 1; index <= pdf.numPages; index += 1) {
+              setStatus(`${file.name}：正在整理第 ${index} / ${pdf.numPages} 页...`);
+              const page = await pdf.getPage(index);
+              const extracted = await extractPageText(page, index, worker);
+              pages.push({
+                page: index,
+                text: extracted.text,
+                char_count: extracted.text.length,
+                extraction_method: extracted.method,
+              });
+            }
+
+            const result = organize(file.name, pages);
+            allResults.push(result);
+            knowledgeEntries.push(...buildKnowledge(result));
+            latestResult = result;
+            completedFiles += 1;
+            setProgress(completedFiles, files.length);
+            render();
           }
 
-          latestResult = organize(file.name, pages);
-          knowledgeEntries = buildKnowledge(latestResult);
           render();
-          downloadButton.disabled = false;
           setStatus(
-            `完成：${latestResult.page_count} 页，${latestResult.organized.paragraphs.length} 段，知识库 ${knowledgeEntries.length} 条，OCR ${latestResult.ocr.pages_used} 页。`,
+            `完成：${allResults.length} 个文件，知识库 ${knowledgeEntries.length} 条，OCR ${allResults.reduce((sum, result) => sum + result.ocr.pages_used, 0)} 页。`,
           );
         } catch (error) {
           setStatus(error.message || "处理失败。");
@@ -448,15 +532,49 @@
         }
       }
 
-      function downloadResult() {
-        if (!latestResult) return;
-        const blob = new Blob([latestResult.organized.markdown], { type: "text/markdown;charset=utf-8" });
+      function downloadText(filename, text, type) {
+        const blob = new Blob([text], { type });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${latestResult.filename.replace(/\.pdf$/i, "")}-整理结果.md`;
+        link.download = filename;
         link.click();
         URL.revokeObjectURL(url);
+      }
+
+      function downloadMarkdown() {
+        if (!allResults.length) return;
+        downloadText("PDF知识库整理结果.md", output.value, "text/markdown;charset=utf-8");
+      }
+
+      function downloadJson() {
+        if (!allResults.length) return;
+        downloadText(
+          "PDF知识库数据.json",
+          JSON.stringify({ files: allResults, knowledge_base: knowledgeEntries }, null, 2),
+          "application/json;charset=utf-8",
+        );
+      }
+
+      async function copyCurrentResult() {
+        if (!output.value) return;
+        await navigator.clipboard.writeText(output.value);
+        setStatus("已复制当前结果。");
+      }
+
+      function clearKnowledge() {
+        latestResult = null;
+        allResults = [];
+        knowledgeEntries = [];
+        output.value = "";
+        knowledgeList.innerHTML = "";
+        setProgress(0, 0);
+        renderKnowledgeList([]);
+        copyButton.disabled = true;
+        downloadMdButton.disabled = true;
+        downloadJsonButton.disabled = true;
+        clearButton.disabled = true;
+        setStatus("已清空。");
       }
 
       function searchKnowledge() {
@@ -471,9 +589,23 @@
       }
 
       processButton.addEventListener("click", processPdf);
-      downloadButton.addEventListener("click", downloadResult);
+      copyButton.addEventListener("click", copyCurrentResult);
+      downloadMdButton.addEventListener("click", downloadMarkdown);
+      downloadJsonButton.addEventListener("click", downloadJson);
+      clearButton.addEventListener("click", clearKnowledge);
       searchButton.addEventListener("click", searchKnowledge);
       viewMode.addEventListener("change", render);
+      input.addEventListener("change", () => setFiles(input.files));
+      dropzone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dropzone.classList.add("active");
+      });
+      dropzone.addEventListener("dragleave", () => dropzone.classList.remove("active"));
+      dropzone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dropzone.classList.remove("active");
+        setFiles(event.dataTransfer.files);
+      });
     </script>
   </body>
 </html>
