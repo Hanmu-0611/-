@@ -21,7 +21,6 @@ from safe_utils import normalize_result, safe_list, safe_string
 PROJECT_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = PROJECT_DIR / "uploaded_files"
 ENV_FILE = PROJECT_DIR / ".env"
-ENV_EXAMPLE_FILE = PROJECT_DIR / ".env.example"
 DEFAULT_ENV_CONTENT = """OPENROUTER_API_KEY=
 OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
 OLLAMA_MODEL=qwen2.5:7b
@@ -44,17 +43,12 @@ def ensure_upload_dir() -> bool:
 
 
 def ensure_env_file() -> None:
-    """Create a local .env file from .env.example for first-time users."""
+    """Create the default .env file if it is missing."""
     if ENV_FILE.exists():
         return
 
     try:
-        if ENV_EXAMPLE_FILE.exists():
-            env_content = ENV_EXAMPLE_FILE.read_text(encoding="utf-8")
-        else:
-            env_content = DEFAULT_ENV_CONTENT
-
-        ENV_FILE.write_text(env_content, encoding="utf-8")
+        ENV_FILE.write_text(DEFAULT_ENV_CONTENT, encoding="utf-8")
     except OSError:
         return
 

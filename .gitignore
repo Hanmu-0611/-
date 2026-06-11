@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 knowledge_base.jsonl
 .env
+!multilingual_pdf_study_helper/.env
 **/.streamlit/*
 !**/.streamlit/
 !**/.streamlit/config.toml

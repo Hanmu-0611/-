@@ -74,19 +74,12 @@ ollama pull qwen2.5:7b
 
 프로젝트 폴더에 기본 `.env` 파일을 미리 만들어두었습니다.
 
-환경 파일은 두 종류가 있습니다.
-
-```text
-.env.example  예시 파일입니다. GitHub에 올려도 됩니다.
-.env          실제 API 키를 입력하는 파일입니다. GitHub에 올리지 않습니다.
-```
-
 실제로 수정해야 하는 파일은 `.env`입니다.
 
 생성된 `.env` 파일을 열고 아래 값만 수정하면 됩니다.
 
 ```text
-OPENROUTER_API_KEY=
+OPENROUTER_API_KEY=API_키_입력
 OPENROUTER_MODEL=사용할_모델명_입력
 OLLAMA_MODEL=qwen2.5:7b
 ```
@@ -100,7 +93,7 @@ OPENROUTER_API_KEY=
 OPENROUTER_MODEL=
 ```
 
-`.env` 파일은 `.gitignore`에 포함되어 있어서 GitHub에는 올라가지 않습니다. 실제 API 키는 `.env.example`이 아니라 `.env`에만 입력하면 됩니다.
+`.env` 파일은 기본 실행을 위해 함께 제공합니다. 실제 API 키를 넣은 상태로는 커밋하지 마세요.
 
 ## 6. 사용 방법
 
@@ -189,8 +182,7 @@ knowledge_base.py      지식베이스 검색
 safe_utils.py          안전한 값 변환과 예외처리 보조 함수
 data/                  샘플 지식베이스 저장 폴더
 requirements.txt       필요한 라이브러리 목록
-.env.example           환경변수 예시 파일
-.env                   실제 API 키 입력 파일, GitHub에는 올리지 않음
+.env                   환경변수 설정 파일
 ```
 
 </details>
