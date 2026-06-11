@@ -1,6 +1,8 @@
+import ast
 import json
 import os
 import re
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -17,10 +19,18 @@ DEFAULT_MODEL = "qwen/qwen3-next-80b-a3b-instruct:free"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 DEFAULT_OLLAMA_MODEL = "qwen2.5:7b"
 MAX_TEXT_LENGTH = 20000
+ANALYSIS_MAX_TOKENS = 7000
 OPENROUTER_TIMEOUT_SECONDS = 60
 OLLAMA_TIMEOUT_SECONDS = 180
 AI_FAILURE_DETAILS = (
     "AI 분석을 완료하지 못했습니다. 선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
+)
+LATEX_JSON_COMMAND_PATTERN = (
+    r"(?:frac|sqrt|sum|int|lim|partial|cdot|times|omega|Omega|Phi|phi|theta|Theta|"
+    r"lambda|Lambda|alpha|beta|gamma|Gamma|Delta|delta|sigma|Sigma|mu|pi|Pi|rho|"
+    r"epsilon|varepsilon|infty|nabla|mathrm|mathbf|mathit|text|left|right|sin|cos|"
+    r"tan|log|ln|exp|leq|geq|neq|approx|pm|mp|div|to|rightarrow|leftarrow|Rightarrow|"
+    r"Leftarrow|cdots|ldots|begin|end|overline|underline|hat|bar|vec|dot|ddot)\b"
 )
 API_KEY_PLACEHOLDERS = {
     "",
@@ -171,7 +181,7 @@ Accuracy rules:
 - Preserve numbers, formulas, variables, symbols, and notation as much as possible.
 - Preserve formulas close to the PDF original and display them as proper LaTeX math whenever possible.
 - In every output field, including concepts, key_points, details, quiz, answers, explanations, and formulas, render mathematical expressions in LaTeX between dollar signs whenever possible.
-- In the formulas field, put the main formula in LaTeX between dollar signs, such as "$E_k = \\frac{{1}}{{2}}mv^2$".
+- In the formulas field, put the main formula in LaTeX between dollar signs, such as "$E_k = \\\\frac{{1}}{{2}}mv^2$" in the raw JSON text.
 - Use LaTeX for fractions, powers, subscripts, Greek letters, matrices, integrals, summations, and derivatives whenever they appear in the PDF.
 - Avoid plain text formulas like "1/2x^2" unless the original PDF formula is too unclear to reconstruct. If plain text is unavoidable, add spaces and parentheses.
 - Explain what each symbol means right after the formula when possible.
@@ -198,14 +208,14 @@ Depth requirements:
 Return JSON only. Do not use Markdown code fences.
 JSON safety rules:
 - Use LaTeX math inside JSON strings for every mathematical expression, not only the formulas field.
-- Escape LaTeX backslashes as two backslashes. Example: "$E_k = \\frac{{1}}{{2}}mv^2$".
-- Do not output unescaped LaTeX like "\frac" in JSON strings.
+- Escape LaTeX backslashes as two backslashes in the raw JSON text. Example: "$E_k = \\\\frac{{1}}{{2}}mv^2$".
+- Do not output raw single-backslash LaTeX commands inside JSON strings.
 - If plain text formulas are unavoidable, use parentheses and spacing. Example: "E_k = (1/2) m v^2".
 
 {{
   "title": "document title or topic",
   "concepts": ["key concept 1: meaning, importance, and relation to the PDF", "key concept 2: meaning, importance, and relation to the PDF"],
-  "formulas": ["$E_k = \\frac{{1}}{{2}}mv^2$: kinetic energy, where $m$ is mass and $v$ is speed", "$V = -\\frac{{d\\Phi}}{{dt}}$: induced voltage from changing magnetic flux"],
+  "formulas": ["$E_k = \\\\frac{{1}}{{2}}mv^2$: kinetic energy, where $m$ is mass and $v$ is speed", "$V = -\\\\frac{{d\\\\Phi}}{{dt}}$: induced voltage from changing magnetic flux"],
   "key_points": ["exam key point 1 with why it matters and common mistake", "exam key point 2 with how to apply it"],
   "knowledge_references": [
     {{
@@ -225,7 +235,7 @@ JSON safety rules:
   "quiz": [
     {{
       "question": "conceptual review question",
-      "answer": "answer hidden by default in the app, using LaTeX for formulas such as $E_k = \\frac{{1}}{{2}}mv^2$",
+      "answer": "answer hidden by default in the app, using LaTeX for formulas such as $E_k = \\\\frac{{1}}{{2}}mv^2$",
       "explanation": "brief explanation or solving steps, with math rendered in LaTeX when needed"
     }}
   ]
@@ -245,54 +255,165 @@ term_mode: {safe_string(term_mode)}
 
 def strip_markdown_code_block(response_text: str) -> str:
     text = safe_string(response_text).strip()
+    text = re.sub(r"^\s*```(?:json|JSON)?\s*", "", text)
+    text = re.sub(r"\s*```\s*$", "", text)
+    return text.strip()
 
-    if text.startswith("```"):
-        lines = text.splitlines()
-        if lines and lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip().startswith("```"):
-            lines = lines[:-1]
-        text = "\n".join(lines).strip()
+
+def extract_json_object(response_text: str) -> str:
+    """Return the first balanced JSON-looking object from a response."""
+    text = safe_string(response_text).strip()
+    start = text.find("{")
+    if start == -1:
+        return text
+
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(start, len(text)):
+        character = text[index]
+
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            continue
+
+        if character == '"':
+            in_string = True
+        elif character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1].strip()
+
+    return text[start:].strip()
+
+
+def normalize_jsonish_text(json_text: str) -> str:
+    """Clean common AI wrapper characters without changing the content meaning."""
+    text = safe_string(json_text).strip().lstrip("\ufeff")
+    text = text.replace("“", '"').replace("”", '"')
+    return text
+
+
+def remove_trailing_commas(json_text: str) -> str:
+    """Remove commas before closing braces/brackets, a common model mistake."""
+    return re.sub(r",(\s*[}\]])", r"\1", safe_string(json_text))
+
+
+def close_unclosed_json(json_text: str) -> str:
+    """Best-effort close for responses cut near the end of a JSON object."""
+    text = safe_string(json_text).rstrip()
+    if not text.startswith("{"):
+        return text
+
+    stack: list[str] = []
+    in_string = False
+    escaped = False
+
+    for character in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            continue
+
+        if character == '"':
+            in_string = True
+        elif character == "{":
+            stack.append("}")
+        elif character == "[":
+            stack.append("]")
+        elif character in "}]":
+            if stack and stack[-1] == character:
+                stack.pop()
+
+    if escaped:
+        text += "\\"
+    if in_string:
+        text += '"'
+    while stack:
+        text += stack.pop()
 
     return text
 
 
-def extract_json_object(response_text: str) -> str:
-    """Return the largest JSON-looking object from a response."""
-    text = safe_string(response_text).strip()
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        return text
-    return text[start : end + 1].strip()
-
-
 def escape_latex_backslashes(json_text: str) -> str:
     """Escape common LaTeX-style backslashes that break JSON parsing."""
-    return re.sub(r"\\(?=[A-Za-z])", r"\\\\", safe_string(json_text))
+    return re.sub(
+        rf"(?<!\\)\\(?={LATEX_JSON_COMMAND_PATTERN})",
+        r"\\\\",
+        safe_string(json_text),
+    )
+
+
+def escape_invalid_json_backslashes(json_text: str) -> str:
+    """Escape non-JSON backslash sequences while preserving valid JSON escapes."""
+    return re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", safe_string(json_text))
+
+
+def build_json_candidates(response_text: str) -> list[str]:
+    cleaned_text = strip_markdown_code_block(response_text)
+    extracted_text = extract_json_object(cleaned_text)
+    base_texts = [cleaned_text, extracted_text]
+    candidates: list[str] = []
+
+    for base_text in base_texts:
+        normalized_text = normalize_jsonish_text(base_text)
+        closed_text = close_unclosed_json(normalized_text)
+        for candidate in [normalized_text, closed_text]:
+            if not candidate:
+                continue
+            without_trailing_commas = remove_trailing_commas(candidate)
+            latex_escaped = escape_latex_backslashes(without_trailing_commas)
+            candidates.extend(
+                [
+                    latex_escaped,
+                    escape_invalid_json_backslashes(without_trailing_commas),
+                    escape_invalid_json_backslashes(latex_escaped),
+                    without_trailing_commas,
+                    candidate,
+                ]
+            )
+
+    return candidates
+
+
+def parse_json_candidate(candidate: str) -> dict[str, Any] | None:
+    try:
+        data = json.loads(candidate, strict=False)
+    except (json.JSONDecodeError, TypeError):
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                data = ast.literal_eval(candidate)
+        except (SyntaxError, ValueError, TypeError):
+            return None
+
+    if isinstance(data, dict):
+        return data
+    return None
 
 
 def load_json_with_repairs(response_text: str) -> dict[str, Any]:
-    cleaned_text = strip_markdown_code_block(response_text)
-    extracted_text = extract_json_object(cleaned_text)
-    candidates = [
-        cleaned_text,
-        extracted_text,
-        escape_latex_backslashes(extracted_text),
-    ]
-
     seen = set()
-    for candidate in candidates:
+    for candidate in build_json_candidates(response_text):
         if not candidate or candidate in seen:
             continue
         seen.add(candidate)
-        try:
-            data = json.loads(candidate)
-        except (json.JSONDecodeError, TypeError):
-            continue
-        if isinstance(data, dict):
+        data = parse_json_candidate(candidate)
+        if data is not None:
             return data
 
+    cleaned_text = strip_markdown_code_block(response_text)
     raise json.JSONDecodeError("Could not parse repaired JSON", cleaned_text, 0)
 
 
@@ -301,7 +422,8 @@ def parse_json_response(response_text: str) -> dict[str, Any]:
         data = load_json_with_repairs(response_text)
     except (json.JSONDecodeError, TypeError):
         return get_empty_analysis(
-            "AI 응답을 JSON으로 변환하지 못했습니다. 아래 원문 응답을 확인하세요.\n\n"
+            "AI 응답의 JSON 형식이 일부 깨져 구조화 표시를 하지 못했습니다. "
+            "아래에 원문 응답을 표시합니다. 다시 분석하면 정상 처리될 수 있습니다.\n\n"
             f"{safe_string(response_text)}"
         )
 
@@ -351,7 +473,12 @@ def call_openrouter_ai(
         )
 
     try:
-        response_text = request_chat_completion(api_key, model, prompt)
+        response_text = request_chat_completion(
+            api_key,
+            model,
+            prompt,
+            max_tokens=ANALYSIS_MAX_TOKENS,
+        )
     except Exception as error:
         return normalize_result(
             {
@@ -515,7 +642,7 @@ def request_chat_completion(
     payload = {
         "model": model,
         "messages": messages,
-        "temperature": 0.2,
+        "temperature": 0.1,
     }
     if max_tokens is not None:
         payload["max_tokens"] = max_tokens
