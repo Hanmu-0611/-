@@ -21,6 +21,8 @@ from safe_utils import normalize_result, safe_list, safe_string
 PROJECT_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = PROJECT_DIR / "uploaded_files"
 ENV_FILE = PROJECT_DIR / ".env"
+LARGE_PDF_WARNING_BYTES = 20 * 1024 * 1024
+MAX_UPLOAD_SIZE_BYTES = 60 * 1024 * 1024
 DEFAULT_ENV_CONTENT = """OPENROUTER_API_KEY=
 OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
 OLLAMA_MODEL=qwen2.5:7b
@@ -421,6 +423,67 @@ def save_ollama_settings(model_name: str, ui_language: str) -> bool:
     except OSError as error:
         st.sidebar.error(f"{t(ui_language, 'save_error')}: {error}")
         return False
+
+
+def get_uploaded_file_size(uploaded_file) -> int:
+    size = getattr(uploaded_file, "size", None)
+    if isinstance(size, int) and size >= 0:
+        return size
+
+    try:
+        current_position = uploaded_file.tell()
+        uploaded_file.seek(0, 2)
+        size = uploaded_file.tell()
+        uploaded_file.seek(current_position)
+        return int(size)
+    except Exception:
+        return 0
+
+
+def format_file_size(size_bytes: int) -> str:
+    if size_bytes >= 1024 * 1024:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
+    if size_bytes >= 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes} B"
+
+
+def get_large_pdf_warning(ui_language: str, file_size: int) -> str:
+    size_text = format_file_size(file_size)
+    ai_limit_text = "20,000"
+    if ui_language == "en":
+        return (
+            f"This PDF is large ({size_text}). Text extraction can still run, but AI analysis uses only "
+            f"the first {ai_limit_text} extracted characters, so later pages may not be reflected."
+        )
+    if ui_language == "zh":
+        return (
+            f"这个 PDF 较大（{size_text}）。仍然可以提取文本，但 AI 分析只会使用前 "
+            f"{ai_limit_text} 个提取字符，因此后面的页面可能不会反映在分析中。"
+        )
+    return (
+        f"PDF 파일이 큽니다({size_text}). 텍스트 추출은 진행할 수 있지만 AI 분석에는 "
+        f"추출 텍스트 앞 {ai_limit_text}자만 사용되므로 뒤쪽 페이지 내용은 반영되지 않을 수 있습니다."
+    )
+
+
+def get_too_large_pdf_error(ui_language: str, file_size: int) -> str:
+    size_text = format_file_size(file_size)
+    limit_text = format_file_size(MAX_UPLOAD_SIZE_BYTES)
+    if ui_language == "en":
+        return (
+            f"This PDF is too large ({size_text}). Please use a PDF under {limit_text} "
+            "or split/compress the file before uploading."
+        )
+    if ui_language == "zh":
+        return (
+            f"这个 PDF 太大（{size_text}）。请上传小于 {limit_text} 的 PDF，"
+            "或先拆分/压缩文件。"
+        )
+    return (
+        f"PDF 파일이 너무 큽니다({size_text}). {limit_text} 이하의 PDF를 사용하거나 "
+        "파일을 나누거나 압축한 뒤 업로드해주세요."
+    )
 
 
 def uploaded_file_is_pdf(uploaded_file) -> bool:
@@ -840,6 +903,13 @@ def main() -> None:
         if uploaded_file is None:
             st.warning(t(ui_language, "upload_first"))
             return
+
+        uploaded_file_size = get_uploaded_file_size(uploaded_file)
+        if uploaded_file_size > MAX_UPLOAD_SIZE_BYTES:
+            st.error(get_too_large_pdf_error(ui_language, uploaded_file_size))
+            return
+        if uploaded_file_size > LARGE_PDF_WARNING_BYTES:
+            st.warning(get_large_pdf_warning(ui_language, uploaded_file_size))
 
         if not uploaded_file_is_pdf(uploaded_file):
             st.error(t(ui_language, "invalid_pdf"))

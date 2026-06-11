@@ -1,4 +1,4 @@
-from ai_client import call_ollama_ai, call_openrouter_ai
+from ai_client import MAX_TEXT_LENGTH, call_ollama_ai, call_openrouter_ai
 from knowledge_base import search_knowledge_base
 from pdf_extractor import extract_pdf_document
 from safe_utils import normalize_result, safe_string
@@ -218,6 +218,17 @@ def analyze_pdf(
     normalized_result.update(local_context)
     normalized_result["ai_provider"] = provider
     normalized_result["ai_provider_label"] = AI_PROVIDER_LABELS.get(provider, "Local analysis")
+
+    if provider in {"ollama", "openrouter"} and local_context["pdf_text_length"] > MAX_TEXT_LENGTH:
+        truncation_warning = (
+            f"PDF에서 추출된 텍스트가 {local_context['pdf_text_length']:,}자로 길어서 "
+            f"AI 분석에는 앞 {MAX_TEXT_LENGTH:,}자만 사용했습니다. "
+            "뒤쪽 페이지 내용은 AI 분석에 충분히 반영되지 않을 수 있습니다."
+        )
+        existing_warning = safe_string(normalized_result.get("warning"))
+        normalized_result["warning"] = (
+            f"{existing_warning}\n\n{truncation_warning}" if existing_warning else truncation_warning
+        )
 
     if not normalized_result.get("knowledge_references") and knowledge_results:
         item_label = get_local_text(target_language)["item"]
