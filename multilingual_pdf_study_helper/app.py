@@ -141,9 +141,10 @@ TEXT = {
         "test_openrouter": "OpenRouter 연결 테스트",
         "checking_openrouter": "OpenRouter 연결을 확인하는 중입니다...",
         "openrouter_success": "OpenRouter 연결 성공! AI 분석을 사용할 수 있습니다.",
-        "openrouter_fail": "OpenRouter 연결에 실패했습니다. API 키, 모델명, 인터넷 연결을 확인해주세요.",
+        "openrouter_fail": "OpenRouter 연결에 실패했습니다. API 키, 모델명, 인터넷 연결을 확인해주세요. 무료 모델이나 OpenRouter 라우팅 상태에 따라 처음 몇 번은 실패할 수 있으니 잠시 후 여러 번 다시 시도해보세요.",
         "api_required_for_ai": "AI 분석을 완료하지 못했습니다. OpenRouter API 키를 .env 파일에 입력해주세요.",
         "result": "분석 결과",
+        "ai_analysis": "AI 분석 내용",
         "local_processing": "PDF 텍스트 추출 결과",
         "extracted_length": "추출된 텍스트 길이",
         "no_pdf_text": "추출된 PDF 텍스트가 없습니다.",
@@ -226,9 +227,10 @@ TEXT = {
         "test_openrouter": "Test OpenRouter connection",
         "checking_openrouter": "Checking OpenRouter connection...",
         "openrouter_success": "OpenRouter connected! AI analysis is available.",
-        "openrouter_fail": "OpenRouter connection failed. Check the API key, model name, and internet connection.",
+        "openrouter_fail": "OpenRouter connection failed. Check the API key, model name, and internet connection. Free models or OpenRouter routing can fail on the first few attempts, so wait a moment and try several times.",
         "api_required_for_ai": "AI analysis could not be completed. Enter an OpenRouter API key in the .env file.",
         "result": "Analysis result",
+        "ai_analysis": "AI analysis",
         "local_processing": "Extracted PDF text",
         "extracted_length": "Extracted text length",
         "no_pdf_text": "No PDF text was extracted.",
@@ -311,9 +313,10 @@ TEXT = {
         "test_openrouter": "测试 OpenRouter 连接",
         "checking_openrouter": "正在检查 OpenRouter 连接...",
         "openrouter_success": "OpenRouter 连接成功！可以使用 AI 分析。",
-        "openrouter_fail": "OpenRouter 连接失败。请检查 API Key、模型名称和网络连接。",
+        "openrouter_fail": "OpenRouter 连接失败。请检查 API Key、模型名称和网络连接。免费模型或 OpenRouter 路由有时前几次会失败，请稍等后多试几次。",
         "api_required_for_ai": "AI 分析未能完成。请在 .env 文件中输入 OpenRouter API Key。",
         "result": "分析结果",
+        "ai_analysis": "AI 分析内容",
         "local_processing": "PDF 文本提取结果",
         "extracted_length": "提取的文本长度",
         "no_pdf_text": "没有提取到 PDF 文本。",
@@ -676,6 +679,15 @@ def show_analysis_result(ui_language: str, result: dict) -> None:
     show_local_processing_result(ui_language, safe_result)
     show_auto_knowledge_search(ui_language, safe_result)
     show_pdf_source_inventory(ui_language, safe_result)
+
+    st.markdown(
+        """
+        <div style="border-top: 2px dashed #b8c0cc; margin: 2rem 0 1.25rem 0;"></div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.subheader(t(ui_language, "ai_analysis"))
+
     show_list(ui_language, "concepts", safe_result.get("concepts", []))
     show_list(ui_language, "formulas", safe_result.get("formulas", []))
     show_list(ui_language, "key_points", safe_result.get("key_points", []))
