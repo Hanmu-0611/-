@@ -52,25 +52,25 @@ AI_PROVIDER_OPTIONS = {
 
 TARGET_LANGUAGE_OPTIONS = {
     "Korean": {"ko": "한국어", "en": "Korean", "zh": "韩语"},
-    "English": {"ko": "English", "en": "English", "zh": "English"},
-    "Chinese": {"ko": "中文", "en": "Chinese", "zh": "中文"},
+    "English": {"ko": "영어", "en": "English", "zh": "English"},
+    "Chinese": {"ko": "중국어", "en": "Chinese", "zh": "中文"},
     "Korean + Chinese": {
-        "ko": "한국어 + 中文",
+        "ko": "한국어 + 중국어",
         "en": "Korean + Chinese",
         "zh": "韩语 + 中文",
     },
     "English + Korean": {
-        "ko": "English + 한국어",
+        "ko": "영어 + 한국어",
         "en": "English + Korean",
         "zh": "English + 韩语",
     },
     "English + Chinese": {
-        "ko": "English + 中文",
+        "ko": "영어 + 중국어",
         "en": "English + Chinese",
         "zh": "English + 中文",
     },
     "English + Korean + Chinese": {
-        "ko": "English + 한국어 + 中文",
+        "ko": "영어 + 한국어 + 중국어",
         "en": "English + Korean + Chinese",
         "zh": "English + 韩语 + 中文",
     },
@@ -83,7 +83,7 @@ TERM_MODE_OPTIONS = {
         "zh": "保留英文术语",
     },
     "English terms with translations": {
-        "ko": "English + 번역 병기",
+        "ko": "영어 + 번역 병기",
         "en": "English terms with translations",
         "zh": "英文术语 + 翻译并列",
     },
