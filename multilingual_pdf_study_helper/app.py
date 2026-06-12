@@ -105,6 +105,7 @@ TEXT = {
         "upload_pdf": "PDF 파일 업로드",
         "target_language": "설명 언어 선택",
         "term_mode": "전공 용어 처리 방식",
+        "translation_notice": "번역/정리 결과에는 기본적으로 중국어 설명이 함께 포함됩니다.",
         "start": "분석 시작",
         "upload_first": "PDF 파일을 먼저 업로드해주세요.",
         "invalid_pdf": "올바른 PDF 파일이 아닙니다. 확장자와 파일 형식을 확인해주세요.",
@@ -190,6 +191,7 @@ TEXT = {
         "upload_pdf": "Upload PDF file",
         "target_language": "Explanation language",
         "term_mode": "Technical term handling",
+        "translation_notice": "Chinese explanations are included in translated/organized results by default.",
         "start": "Start analysis",
         "upload_first": "Please upload a PDF file first.",
         "invalid_pdf": "This is not a valid PDF file. Please check the extension and file format.",
@@ -275,6 +277,7 @@ TEXT = {
         "upload_pdf": "上传 PDF 文件",
         "target_language": "说明语言",
         "term_mode": "专业术语处理方式",
+        "translation_notice": "翻译和整理结果会默认包含中文说明。",
         "start": "开始分析",
         "upload_first": "请先上传 PDF 文件。",
         "invalid_pdf": "这不是有效的 PDF 文件。请检查扩展名和文件格式。",
@@ -965,8 +968,10 @@ def main() -> None:
     target_language = st.selectbox(
         t(ui_language, "target_language"),
         list(TARGET_LANGUAGE_OPTIONS.keys()),
+        index=list(TARGET_LANGUAGE_OPTIONS.keys()).index("Korean + Chinese"),
         format_func=lambda key: TARGET_LANGUAGE_OPTIONS[key][ui_language],
     )
+    st.info(t(ui_language, "translation_notice"))
 
     term_mode = st.selectbox(
         t(ui_language, "term_mode"),

@@ -129,14 +129,14 @@ def get_empty_analysis(details: str = "") -> dict[str, Any]:
 
 
 def get_output_language_instruction(target_language: str) -> str:
-    """Return a clear language instruction without forcing extra languages."""
+    """Return a clear language instruction that always keeps Chinese visible."""
     language = safe_string(target_language).strip() or "Korean"
     language_map = {
-        "Korean": "Korean only",
-        "English": "English only",
+        "Korean": "Korean and Chinese",
+        "English": "English and Chinese",
         "Chinese": "Chinese only",
         "Korean + Chinese": "Korean and Chinese",
-        "English + Korean": "English and Korean",
+        "English + Korean": "English, Korean, and Chinese",
         "English + Chinese": "English and Chinese",
         "English + Korean + Chinese": "English, Korean, and Chinese",
     }
@@ -172,11 +172,12 @@ Output language:
 {output_language}
 
 Important language rules:
-- Use only the selected output language(s).
-- Do not add Chinese unless the selected output language includes Chinese.
-- If Korean only is selected, write Korean only.
-- If English only is selected, write English only.
+- Always include Chinese explanations or Chinese translation in the main study output.
+- If Korean is selected, write Korean + Chinese together.
+- If English is selected, write English + Chinese together.
+- If Korean + English is selected, write Korean + English + Chinese together.
 - If Chinese only is selected, write Chinese only.
+- For concepts, formulas, key_points, details, quiz questions, quiz answers, and quiz explanations, include Chinese in the same item instead of placing Chinese only in the glossary.
 - Exception: the glossary is always multilingual. Fill english, korean, and chinese for every glossary item.
 - In the glossary explanation field, use the selected output language(s).
 
@@ -222,16 +223,16 @@ JSON safety rules:
 
 {{
   "title": "document title or topic",
-  "concepts": ["key concept 1: meaning, importance, and relation to the PDF", "key concept 2: meaning, importance, and relation to the PDF"],
-  "formulas": ["important formula, definition, model, framework, procedure, or key term from the PDF", "if the PDF includes equations, preserve them in LaTeX such as $E_k = \\\\frac{{1}}{{2}}mv^2$"],
-  "key_points": ["exam key point 1 with why it matters and common mistake", "exam key point 2 with how to apply it"],
+  "concepts": ["key concept 1: meaning and importance / 中文：对应概念解释", "key concept 2: relation to the PDF / 中文：对应中文说明"],
+  "formulas": ["important formula, definition, model, framework, procedure, or key term from the PDF / 中文：公式或定义解释", "if the PDF includes equations, preserve them in LaTeX such as $E_k = \\\\frac{{1}}{{2}}mv^2$ / 中文：说明符号含义"],
+  "key_points": ["exam key point 1 with why it matters and common mistake / 中文：考试重点与常见错误", "exam key point 2 with how to apply it / 中文：应用方法"],
   "knowledge_references": [
     {{
       "title": "reference title",
       "content": "reference content and why it is relevant"
     }}
   ],
-  "details": "a study-guide style explanation with definitions, intuition, relationships, procedures, and common mistakes",
+  "details": "a study-guide style explanation with definitions, intuition, relationships, procedures, and common mistakes. Include Chinese explanation throughout.",
   "glossary": [
     {{
       "english": "Linear Independence",
@@ -242,9 +243,9 @@ JSON safety rules:
   ],
   "quiz": [
     {{
-      "question": "conceptual review question",
-      "answer": "answer hidden by default in the app, using LaTeX for formulas such as $E_k = \\\\frac{{1}}{{2}}mv^2$",
-      "explanation": "brief explanation or solving steps, with math rendered in LaTeX when needed"
+      "question": "conceptual review question / 中文：复习问题",
+      "answer": "answer hidden by default in the app, using LaTeX for formulas such as $E_k = \\\\frac{{1}}{{2}}mv^2$ / 中文：答案",
+      "explanation": "brief explanation or solving steps, with math rendered in LaTeX when needed / 中文：解析"
     }}
   ]
 }}
