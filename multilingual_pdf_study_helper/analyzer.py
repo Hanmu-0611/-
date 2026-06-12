@@ -1,4 +1,4 @@
-from ai_client import MAX_TEXT_LENGTH, call_ollama_ai, call_openrouter_ai
+from ai_client import MAX_TEXT_LENGTH, call_ollama_ai, call_openai_ai, call_openrouter_ai
 from knowledge_base import search_knowledge_base
 from local_translator import (
     build_fast_translation_lines,
@@ -21,6 +21,7 @@ PDF_PREVIEW_LENGTH = 2000
 AI_PROVIDER_LABELS = {
     "local": "Local analysis",
     "ollama": "Ollama local AI",
+    "openai": "OpenAI API",
     "openrouter": "OpenRouter online AI",
 }
 
@@ -227,6 +228,19 @@ def analyze_pdf(
                 "error": f"Ollama 분석 중 오류가 발생했습니다: {error}",
                 "details": AI_FAILURE_DETAILS,
             }
+    elif provider == "openai":
+        try:
+            analysis_result = call_openai_ai(
+                pdf_text=pdf_text,
+                knowledge_results=knowledge_results,
+                target_language=target_language,
+                term_mode=term_mode,
+            )
+        except Exception as error:
+            analysis_result = {
+                "error": f"OpenAI 분석 중 오류가 발생했습니다: {error}",
+                "details": AI_FAILURE_DETAILS,
+            }
     else:
         try:
             analysis_result = call_openrouter_ai(
@@ -246,7 +260,7 @@ def analyze_pdf(
     normalized_result["ai_provider"] = provider
     normalized_result["ai_provider_label"] = AI_PROVIDER_LABELS.get(provider, "Local analysis")
 
-    if normalized_result.get("error_code") == "openrouter_rate_limit":
+    if normalized_result.get("error_code") in {"openrouter_rate_limit", "openai_rate_limit"}:
         rate_limit_message = safe_string(normalized_result.get("error"))
         normalized_result = build_local_analysis_result(
             pdf_text=pdf_text,
@@ -263,7 +277,7 @@ def analyze_pdf(
             "그래도 PDF 텍스트 추출과 지식베이스 검색은 완료되어 아래 로컬 분석 결과를 표시합니다."
         )
 
-    if provider in {"ollama", "openrouter"} and local_context["pdf_text_length"] > MAX_TEXT_LENGTH:
+    if provider in {"ollama", "openai", "openrouter"} and local_context["pdf_text_length"] > MAX_TEXT_LENGTH:
         truncation_warning = (
             f"PDF에서 추출된 텍스트가 {local_context['pdf_text_length']:,}자로 길어서 "
             f"AI 분석에는 앞 {MAX_TEXT_LENGTH:,}자만 사용했습니다. "

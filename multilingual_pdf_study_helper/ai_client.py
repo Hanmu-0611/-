@@ -15,12 +15,15 @@ from safe_utils import normalize_result, safe_list, safe_string
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_FILE = PROJECT_DIR / ".env"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENAI_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_MODEL = "qwen/qwen3-next-80b-a3b-instruct:free"
+DEFAULT_OPENAI_MODEL = "gpt-4.1-mini"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 DEFAULT_OLLAMA_MODEL = "qwen2.5:7b"
 MAX_TEXT_LENGTH = 20000
 ANALYSIS_MAX_TOKENS = 7000
 OPENROUTER_TIMEOUT_SECONDS = 60
+OPENAI_TIMEOUT_SECONDS = 60
 OLLAMA_TIMEOUT_SECONDS = 180
 AI_FAILURE_DETAILS = (
     "AI 분석을 완료하지 못했습니다. 선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
@@ -42,6 +45,8 @@ API_KEY_PLACEHOLDERS = {
     "여기에_API_KEY_입력",
     "your_api_key_here",
     "your_openrouter_api_key",
+    "your_openai_api_key",
+    "여기에_OPENAI_API_KEY_입력",
 }
 MODEL_PLACEHOLDERS = {
     "",
@@ -70,8 +75,26 @@ def normalize_openrouter_api_key(value: str | None) -> str:
     return raw_value
 
 
+def normalize_openai_api_key(value: str | None) -> str:
+    """Extract a usable OpenAI API key from pasted text."""
+    raw_value = safe_string(value).strip().strip('"').strip("'")
+    if raw_value.lower().startswith("bearer "):
+        raw_value = raw_value[7:].strip()
+
+    key_match = re_search_openai_key(raw_value)
+    if key_match:
+        return key_match
+
+    return raw_value
+
+
 def re_search_openrouter_key(value: str) -> str:
     match = re.search(r"sk-or-v1-[A-Za-z0-9_-]+", safe_string(value))
+    return match.group(0) if match else ""
+
+
+def re_search_openai_key(value: str) -> str:
+    match = re.search(r"sk-[A-Za-z0-9_-]+", safe_string(value))
     return match.group(0) if match else ""
 
 
@@ -83,8 +106,21 @@ def get_openrouter_api_key() -> str:
     return api_key
 
 
+def get_openai_api_key() -> str:
+    """Read the OpenAI API key from the project .env file only."""
+    api_key = normalize_openai_api_key(get_project_env().get("OPENAI_API_KEY"))
+    if api_key in API_KEY_PLACEHOLDERS:
+        return ""
+    return api_key
+
+
 def openrouter_key_looks_valid(api_key: str) -> bool:
     return bool(re_search_openrouter_key(api_key))
+
+
+def openai_key_looks_valid(api_key: str) -> bool:
+    key = normalize_openai_api_key(api_key)
+    return key.startswith("sk-") and not key.startswith("sk-or-v1-") and len(key) > 20
 
 
 def get_current_model_info() -> dict[str, Any]:
@@ -94,6 +130,22 @@ def get_current_model_info() -> dict[str, Any]:
     if raw_model in MODEL_PLACEHOLDERS:
         return {
             "model": DEFAULT_MODEL,
+            "uses_default": True,
+        }
+
+    return {
+        "model": raw_model,
+        "uses_default": False,
+    }
+
+
+def get_openai_model_info() -> dict[str, Any]:
+    """Return the configured OpenAI model."""
+    raw_model = safe_string(get_project_env().get("OPENAI_MODEL")).strip()
+
+    if raw_model in MODEL_PLACEHOLDERS:
+        return {
+            "model": DEFAULT_OPENAI_MODEL,
             "uses_default": True,
         }
 
@@ -510,6 +562,71 @@ def call_openrouter_ai(
     return parse_json_response(response_text)
 
 
+def call_openai_ai(
+    pdf_text: str,
+    knowledge_results: list[dict],
+    target_language: str,
+    term_mode: str,
+) -> dict[str, Any]:
+    api_key = get_openai_api_key()
+    model = get_openai_model_info()["model"]
+
+    if not api_key:
+        return normalize_result(
+            {
+                "error": "OPENAI_API_KEY가 설정되지 않았습니다. .env 파일이나 왼쪽 설정에서 실제 API 키를 입력해주세요.",
+                "details": AI_FAILURE_DETAILS,
+            }
+        )
+    if not openai_key_looks_valid(api_key):
+        return normalize_result(
+            {
+                "error": "OPENAI_API_KEY 형식이 올바르지 않습니다. OpenAI API Key는 보통 sk- 로 시작합니다.",
+                "details": AI_FAILURE_DETAILS,
+            }
+        )
+
+    try:
+        prompt = build_prompt(
+            pdf_text=pdf_text,
+            knowledge_results=knowledge_results,
+            target_language=target_language,
+            term_mode=term_mode,
+        )
+    except Exception as error:
+        return normalize_result(
+            {
+                "error": f"OpenAI 프롬프트를 만드는 중 오류가 발생했습니다: {error}",
+                "details": "PDF 텍스트 또는 지식베이스 값을 처리하지 못했습니다.",
+            }
+        )
+
+    try:
+        response_text = request_openai_response(
+            api_key=api_key,
+            model=model,
+            prompt=prompt,
+            max_tokens=ANALYSIS_MAX_TOKENS,
+        )
+    except Exception as error:
+        if is_openai_rate_limit_error(error):
+            return normalize_result(
+                {
+                    "error": make_user_safe_openai_error(error),
+                    "error_code": "openai_rate_limit",
+                    "details": "PDF 텍스트 추출은 완료되었습니다. 온라인 AI 분석만 잠시 제한되었습니다.",
+                }
+            )
+        return normalize_result(
+            {
+                "error": make_user_safe_openai_error(error),
+                "details": AI_FAILURE_DETAILS,
+            }
+        )
+
+    return parse_json_response(response_text)
+
+
 def call_ollama_ai(
     pdf_text: str,
     knowledge_results: list[dict],
@@ -586,6 +703,47 @@ def test_openrouter_connection() -> dict[str, Any]:
     return {
         "success": False,
         "message": "OpenRouter가 빈 응답을 반환했습니다.",
+    }
+
+
+def test_openai_connection() -> dict[str, Any]:
+    """Send a small request to OpenAI and report connection status."""
+    api_key = get_openai_api_key()
+    model = get_openai_model_info()["model"]
+
+    if not api_key:
+        return {
+            "success": False,
+            "message": "OPENAI_API_KEY가 설정되지 않았습니다.",
+        }
+    if not openai_key_looks_valid(api_key):
+        return {
+            "success": False,
+            "message": "API Key 형식이 올바르지 않습니다. OpenAI API Key는 보통 sk- 로 시작합니다.",
+        }
+
+    try:
+        response_text = request_openai_response(
+            api_key=api_key,
+            model=model,
+            prompt="Reply with OK only.",
+            max_tokens=16,
+        )
+    except Exception as error:
+        return {
+            "success": False,
+            "message": safe_string(error) or "OpenAI 연결 테스트 중 오류가 발생했습니다.",
+        }
+
+    if response_text.strip():
+        return {
+            "success": True,
+            "message": "OpenAI 연결 성공",
+        }
+
+    return {
+        "success": False,
+        "message": "OpenAI가 빈 응답을 반환했습니다.",
     }
 
 
@@ -692,6 +850,65 @@ def request_chat_completion(
     return safe_string(data["choices"][0]["message"]["content"])
 
 
+def request_openai_response(
+    api_key: str,
+    model: str,
+    prompt: str,
+    max_tokens: int | None = None,
+) -> str:
+    """Call OpenAI Responses API with an explicit Authorization header."""
+    payload: dict[str, Any] = {
+        "model": model,
+        "input": [
+            {
+                "role": "system",
+                "content": "You are a careful multilingual study assistant. Return JSON only.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.1,
+    }
+    if max_tokens is not None:
+        payload["max_output_tokens"] = max_tokens
+
+    response = requests.post(
+        f"{OPENAI_BASE_URL}/responses",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=OPENAI_TIMEOUT_SECONDS,
+    )
+
+    if response.status_code >= 400:
+        try:
+            error_payload = response.json()
+        except ValueError:
+            error_payload = response.text
+        if response.status_code == 429:
+            raise RuntimeError("OPENAI_RATE_LIMIT")
+        raise RuntimeError(f"오류 코드 {response.status_code}: {error_payload}")
+
+    data = response.json()
+    output_text = safe_string(data.get("output_text"))
+    if output_text:
+        return output_text
+
+    text_parts: list[str] = []
+    for output_item in safe_list(data.get("output")):
+        if not isinstance(output_item, dict):
+            continue
+        for content_item in safe_list(output_item.get("content")):
+            if not isinstance(content_item, dict):
+                continue
+            text = safe_string(content_item.get("text"))
+            if text:
+                text_parts.append(text)
+
+    return "\n".join(text_parts).strip()
+
+
 def is_openrouter_rate_limit_error(error: Exception) -> bool:
     error_text = safe_string(error)
     return "OPENROUTER_RATE_LIMIT" in error_text or "오류 코드 429" in error_text
@@ -710,3 +927,23 @@ def make_user_safe_openrouter_error(error: Exception) -> str:
         return "OpenRouter 모델명을 찾을 수 없습니다. 모델명을 다시 확인해주세요."
 
     return "OpenRouter API 호출에 실패했습니다. API Key, 모델명, 인터넷 연결을 확인해주세요."
+
+
+def is_openai_rate_limit_error(error: Exception) -> bool:
+    error_text = safe_string(error)
+    return "OPENAI_RATE_LIMIT" in error_text or "오류 코드 429" in error_text
+
+
+def make_user_safe_openai_error(error: Exception) -> str:
+    if is_openai_rate_limit_error(error):
+        return "OpenAI API 사용량 제한 또는 크레딧 제한에 걸렸습니다. 잠시 후 다시 시도하거나 OpenAI 계정의 결제/한도를 확인해주세요."
+
+    error_text = safe_string(error)
+    if "오류 코드 401" in error_text or "401" in error_text:
+        return "OpenAI API Key 인증에 실패했습니다. API Key가 올바른지 확인해주세요."
+    if "오류 코드 402" in error_text or "402" in error_text:
+        return "OpenAI 계정의 결제/크레딧 상태를 확인해주세요."
+    if "오류 코드 404" in error_text or "404" in error_text:
+        return "OpenAI 모델을 찾을 수 없습니다. 프로그램 내부 모델 설정을 확인해주세요."
+
+    return "OpenAI API 호출에 실패했습니다. API Key, 계정 상태, 인터넷 연결을 확인해주세요."

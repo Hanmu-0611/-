@@ -2,7 +2,7 @@
 
 외국어 강의자료 PDF를 업로드하면 PDF 텍스트를 추출하고, 샘플 지식베이스를 참고해 주요 개념, 공식/정의, 시험 핵심 내용, 상세 설명, 복습 문제, 다국어 용어 사전을 정리하는 Streamlit 앱입니다.
 
-API 키가 없어도 앱 실행, PDF 업로드, PDF 텍스트 추출, 출처 지식베이스 생성, 로컬 분석 기능은 사용할 수 있습니다. OpenRouter 기반 AI 분석과 연결 테스트를 사용하려면 `.env` 파일에 실제 API 키를 입력해야 합니다.
+API 키가 없어도 앱 실행, PDF 업로드, PDF 텍스트 추출, 출처 지식베이스 생성, 로컬 분석 기능은 사용할 수 있습니다. OpenRouter 또는 OpenAI 기반 AI 분석과 연결 테스트를 사용하려면 웹페이지 왼쪽 설정이나 `.env` 파일에 실제 API 키를 입력해야 합니다.
 
 ## 免费模式和手动输入 API
 
@@ -62,7 +62,25 @@ machine learning [머신러닝 / 기계학습 / 机器学习]
 
 ### 2. 在网页内部手动输入 API Key
 
-如果要使用 OpenRouter 在线 AI，可以直接在网页左侧输入，不需要手动改代码。
+如果要使用在线 AI，可以直接在网页左侧输入 API Key，不需要手动改代码。
+
+OpenAI API：
+
+```text
+AI 模式选择：
+OpenAI API 사용
+
+打开：
+OpenAI API Key 设置
+
+输入：
+OpenAI API Key
+
+点击：
+API 설정 저장
+```
+
+OpenRouter API：
 
 ```text
 AI 模式选择：
@@ -78,7 +96,7 @@ OpenRouter API Key
 API 설정 저장
 ```
 
-模型会由程序自动选择，普通用户不需要知道或填写模型名。
+OpenAI 和 OpenRouter 的模型都会由程序自动选择，普通用户不需要知道或填写模型名。
 
 ## 실행 방법
 
@@ -113,16 +131,18 @@ api key가 입력이 잘 되었더라도 OpenRouter 연결 테스트에서 처�
 ```text
 OPENROUTER_API_KEY=여기에_API_KEY_입력
 OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
+OPENAI_API_KEY=여기에_OPENAI_API_KEY_입력
+OPENAI_MODEL=gpt-4.1-mini
 OLLAMA_MODEL=qwen2.5:7b
 ```
 
-普通用户只需要填写 `OPENROUTER_API_KEY`。`OPENROUTER_MODEL` 是程序内部默认模型，不需要修改。
+普通用户只需要填写 `OPENROUTER_API_KEY` 或 `OPENAI_API_KEY`。`OPENROUTER_MODEL` 和 `OPENAI_MODEL` 是程序内部默认模型，不需要修改。
 
-API 키가 없으면 `OPENROUTER_API_KEY=`처럼 비워두면 됩니다. 이 경우 OpenRouter 연결 테스트와 OpenRouter AI 분석은 실패 메시지를 보여주지만, 로컬 PDF 분석 기능은 계속 사용할 수 있습니다.
+API 키가 없으면 `OPENROUTER_API_KEY=` 또는 `OPENAI_API_KEY=`처럼 비워두면 됩니다. 이 경우 온라인 AI 연결 테스트와 온라인 AI 분석은 실패 메시지를 보여주지만, 로컬 PDF 분석 기능은 계속 사용할 수 있습니다.
 
 ## 网页内部 API 输入代码
 
-网页左侧 API 输入框代码在 `multilingual_pdf_study_helper/app.py` 的 `show_ai_settings_sidebar()` 函数中。
+网页左侧 API 输入框代码在 `multilingual_pdf_study_helper/app.py` 的 `show_ai_settings_sidebar()` 函数中。OpenAI 和 OpenRouter 都可以在这里输入 Key。
 
 ```python
 with st.sidebar.expander("API Key 设置"):
@@ -138,6 +158,8 @@ with st.sidebar.expander("API Key 设置"):
 ```
 
 保存 API Key 的代码在 `save_openrouter_settings()` 函数中。它会把网页里输入的 Key 保存到本地 `.env` 文件，模型名由程序自动写入默认值。
+
+OpenAI 的保存代码在 `save_openai_settings()` 函数中。用户只需要输入 OpenAI API Key，模型名由程序默认使用 `gpt-4.1-mini`。
 
 ```python
 def save_openrouter_settings(api_key: str) -> bool:
@@ -197,7 +219,7 @@ def save_openrouter_settings(api_key: str) -> bool:
 multilingual_pdf_study_helper/
   app.py                 Streamlit 앱
   analyzer.py            PDF 분석 흐름
-  ai_client.py           OpenRouter/Ollama 호출
+  ai_client.py           OpenRouter/OpenAI/Ollama 호출
   pdf_extractor.py       PDF 텍스트 추출
   knowledge_base.py      지식베이스 검색
   data/knowledge_base_sample.json

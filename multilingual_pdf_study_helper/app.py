@@ -9,10 +9,15 @@ from analyzer import analyze_pdf
 from ai_client import (
     get_current_model_info,
     get_ollama_model_info,
+    get_openai_api_key,
+    get_openai_model_info,
     get_openrouter_api_key,
+    normalize_openai_api_key,
     normalize_openrouter_api_key,
+    openai_key_looks_valid,
     openrouter_key_looks_valid,
     test_ollama_connection,
+    test_openai_connection,
     test_openrouter_connection,
 )
 from knowledge_base import search_knowledge_base
@@ -26,6 +31,8 @@ LARGE_PDF_WARNING_BYTES = 20 * 1024 * 1024
 MAX_UPLOAD_SIZE_BYTES = 60 * 1024 * 1024
 DEFAULT_ENV_CONTENT = """OPENROUTER_API_KEY=
 OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4.1-mini
 OLLAMA_MODEL=qwen2.5:7b
 """
 
@@ -45,6 +52,11 @@ AI_PROVIDER_OPTIONS = {
         "ko": "Ollama 로컬 AI 사용 (API Key 없음)",
         "en": "Use local Ollama AI (no API key)",
         "zh": "使用本地 Ollama AI（无需 API Key）",
+    },
+    "openai": {
+        "ko": "OpenAI API 사용",
+        "en": "Use OpenAI API",
+        "zh": "使用 OpenAI API",
     },
     "openrouter": {
         "ko": "OpenRouter 온라인 AI 사용",
@@ -113,6 +125,7 @@ TEXT = {
         "upload_error": "PDF 파일을 저장하는 중 오류가 발생했습니다",
         "spinner_local": "PDF를 읽고 로컬 분석을 진행하고 있습니다...",
         "spinner_ollama": "PDF를 읽고 Ollama 로컬 AI 분석을 진행하고 있습니다...",
+        "spinner_openai": "PDF를 읽고 OpenAI API 분석을 진행하고 있습니다...",
         "spinner_openrouter": "PDF를 읽고 OpenRouter AI 분석을 진행하고 있습니다...",
         "unexpected_error": "분석 중 예상하지 못한 오류가 발생했습니다",
         "try_again": "다른 PDF로 다시 시도해주세요.",
@@ -131,6 +144,17 @@ TEXT = {
         "ollama_fail": "Ollama 연결에 실패했습니다.",
         "ollama_hint": "Ollama 앱을 설치/실행한 뒤 모델을 내려받아야 합니다.",
         "ollama_pull_hint": "예: ollama pull qwen2.5:7b 실행 후 사용합니다.",
+        "openai_status": "OpenAI 상태",
+        "openai_key_set": "OpenAI API Key가 설정되어 있습니다.",
+        "openai_key_invalid": "저장된 API Key 형식이 OpenAI 형식이 아닙니다.",
+        "openai_key_missing": "OpenAI API Key가 없어 OpenAI 분석은 사용할 수 없습니다.",
+        "openai_settings": "OpenAI API Key 설정",
+        "openai_key_hint": "OpenAI API Key는 보통 sk- 로 시작합니다. 다시 확인해주세요.",
+        "openai_model_caption": "OpenAI 모델은 자동으로 설정됩니다. 사용자는 API Key만 입력하면 됩니다.",
+        "test_openai": "OpenAI 연결 테스트",
+        "checking_openai": "OpenAI 연결을 확인하는 중입니다...",
+        "openai_success": "OpenAI 연결 성공! AI 분석을 사용할 수 있습니다.",
+        "openai_fail": "OpenAI 연결에 실패했습니다. API Key, 결제/크레딧 상태, 인터넷 연결을 확인해주세요.",
         "openrouter_status": "OpenRouter 상태",
         "api_key_set": "API Key가 설정되어 있습니다.",
         "api_key_invalid": "저장된 API Key 형식이 OpenRouter 형식이 아닙니다.",
@@ -199,6 +223,7 @@ TEXT = {
         "upload_error": "An error occurred while saving the PDF file",
         "spinner_local": "Reading the PDF and running local analysis...",
         "spinner_ollama": "Reading the PDF and running Ollama local AI analysis...",
+        "spinner_openai": "Reading the PDF and running OpenAI API analysis...",
         "spinner_openrouter": "Reading the PDF and running OpenRouter AI analysis...",
         "unexpected_error": "An unexpected error occurred during analysis",
         "try_again": "Please try again with another PDF.",
@@ -217,6 +242,17 @@ TEXT = {
         "ollama_fail": "Ollama connection failed.",
         "ollama_hint": "Install/run Ollama and pull the model first.",
         "ollama_pull_hint": "Example: run ollama pull qwen2.5:7b before using it.",
+        "openai_status": "OpenAI status",
+        "openai_key_set": "OpenAI API key is configured.",
+        "openai_key_invalid": "The saved API key is not in the OpenAI format.",
+        "openai_key_missing": "No OpenAI API key found. OpenAI analysis is unavailable.",
+        "openai_settings": "OpenAI API key settings",
+        "openai_key_hint": "OpenAI API keys usually start with sk-. Please check again.",
+        "openai_model_caption": "The OpenAI model is selected automatically. Users only need to enter an API key.",
+        "test_openai": "Test OpenAI connection",
+        "checking_openai": "Checking OpenAI connection...",
+        "openai_success": "OpenAI connected! AI analysis is available.",
+        "openai_fail": "OpenAI connection failed. Check the API key, billing/credits, and internet connection.",
         "openrouter_status": "OpenRouter status",
         "api_key_set": "API key is configured.",
         "api_key_invalid": "The saved API key is not in the OpenRouter format.",
@@ -285,6 +321,7 @@ TEXT = {
         "upload_error": "保存 PDF 文件时发生错误",
         "spinner_local": "正在读取 PDF 并进行本地分析...",
         "spinner_ollama": "正在读取 PDF 并进行 Ollama 本地 AI 分析...",
+        "spinner_openai": "正在读取 PDF 并进行 OpenAI API 分析...",
         "spinner_openrouter": "正在读取 PDF 并进行 OpenRouter AI 分析...",
         "unexpected_error": "分析过程中发生了意外错误",
         "try_again": "请尝试使用其他 PDF。",
@@ -303,6 +340,17 @@ TEXT = {
         "ollama_fail": "Ollama 连接失败。",
         "ollama_hint": "请先安装/运行 Ollama 并下载模型。",
         "ollama_pull_hint": "例如：运行 ollama pull qwen2.5:7b 后再使用。",
+        "openai_status": "OpenAI 状态",
+        "openai_key_set": "OpenAI API Key 已设置。",
+        "openai_key_invalid": "保存的 API Key 不是 OpenAI 格式。",
+        "openai_key_missing": "没有 OpenAI API Key，无法使用 OpenAI 分析。",
+        "openai_settings": "OpenAI API Key 设置",
+        "openai_key_hint": "OpenAI API Key 通常以 sk- 开头。请重新确认。",
+        "openai_model_caption": "OpenAI 模型已自动设置，普通用户只需要输入 API Key。",
+        "test_openai": "测试 OpenAI 连接",
+        "checking_openai": "正在检查 OpenAI 连接...",
+        "openai_success": "OpenAI 连接成功！可以使用 AI 分析。",
+        "openai_fail": "OpenAI 连接失败。请检查 API Key、账户额度/付款状态和网络连接。",
         "openrouter_status": "OpenRouter 状态",
         "api_key_set": "API Key 已设置。",
         "api_key_invalid": "保存的 API Key 不是 OpenRouter 格式。",
@@ -385,6 +433,8 @@ def ensure_env_file() -> None:
 def save_openrouter_settings(api_key: str, ui_language: str) -> bool:
     normalized_key = normalize_openrouter_api_key(api_key)
     model_name = get_current_model_info().get("model")
+    openai_key = get_openai_api_key()
+    openai_model = get_openai_model_info().get("model")
 
     try:
         ENV_FILE.write_text(
@@ -392,6 +442,34 @@ def save_openrouter_settings(api_key: str, ui_language: str) -> bool:
                 [
                     f"OPENROUTER_API_KEY={normalized_key}",
                     f"OPENROUTER_MODEL={safe_string(model_name).strip()}",
+                    f"OPENAI_API_KEY={openai_key}",
+                    f"OPENAI_MODEL={safe_string(openai_model).strip()}",
+                    f"OLLAMA_MODEL={get_ollama_model_info().get('model')}",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return True
+    except OSError as error:
+        st.sidebar.error(f"{t(ui_language, 'save_error')}: {error}")
+        return False
+
+
+def save_openai_settings(api_key: str, ui_language: str) -> bool:
+    openrouter_key = get_openrouter_api_key()
+    openrouter_model = get_current_model_info().get("model")
+    normalized_key = normalize_openai_api_key(api_key)
+    openai_model = get_openai_model_info().get("model")
+
+    try:
+        ENV_FILE.write_text(
+            "\n".join(
+                [
+                    f"OPENROUTER_API_KEY={openrouter_key}",
+                    f"OPENROUTER_MODEL={openrouter_model}",
+                    f"OPENAI_API_KEY={normalized_key}",
+                    f"OPENAI_MODEL={safe_string(openai_model).strip()}",
                     f"OLLAMA_MODEL={get_ollama_model_info().get('model')}",
                     "",
                 ]
@@ -407,6 +485,8 @@ def save_openrouter_settings(api_key: str, ui_language: str) -> bool:
 def save_ollama_settings(model_name: str, ui_language: str) -> bool:
     openrouter_key = get_openrouter_api_key()
     openrouter_model = get_current_model_info().get("model")
+    openai_key = get_openai_api_key()
+    openai_model = get_openai_model_info().get("model")
     ollama_model = safe_string(model_name).strip() or get_ollama_model_info().get("model")
 
     try:
@@ -415,6 +495,8 @@ def save_ollama_settings(model_name: str, ui_language: str) -> bool:
                 [
                     f"OPENROUTER_API_KEY={openrouter_key}",
                     f"OPENROUTER_MODEL={openrouter_model}",
+                    f"OPENAI_API_KEY={openai_key}",
+                    f"OPENAI_MODEL={safe_string(openai_model).strip()}",
                     f"OLLAMA_MODEL={ollama_model}",
                     "",
                 ]
@@ -901,6 +983,50 @@ def show_ai_settings_sidebar(ui_language: str) -> tuple[str, str]:
         st.sidebar.caption(t(ui_language, "ollama_pull_hint"))
         return selected_provider, safe_string(ollama_model_input).strip() or ollama_model
 
+    if selected_provider == "openai":
+        st.sidebar.header(t(ui_language, "openai_status"))
+        current_key = get_openai_api_key()
+
+        if current_key:
+            if openai_key_looks_valid(current_key):
+                st.sidebar.success(t(ui_language, "openai_key_set"))
+            else:
+                st.sidebar.error(t(ui_language, "openai_key_invalid"))
+        else:
+            st.sidebar.warning(t(ui_language, "openai_key_missing"))
+
+        with st.sidebar.expander(t(ui_language, "openai_settings"), expanded=True):
+            api_key_input = st.text_input(
+                "OpenAI API Key",
+                type="password",
+                placeholder="sk-...",
+            )
+            if st.button(t(ui_language, "save_api_settings"), key="save_openai_settings"):
+                key_to_save = api_key_input.strip() or current_key
+                if key_to_save and not openai_key_looks_valid(normalize_openai_api_key(key_to_save)):
+                    st.sidebar.error(t(ui_language, "openai_key_hint"))
+                    return selected_provider, ""
+                if save_openai_settings(key_to_save, ui_language):
+                    st.sidebar.success(t(ui_language, "saved"))
+
+        st.sidebar.caption(t(ui_language, "openai_model_caption"))
+
+        if st.sidebar.button(t(ui_language, "test_openai")):
+            with st.sidebar.spinner(t(ui_language, "checking_openai")):
+                try:
+                    test_result = test_openai_connection()
+                except Exception as error:
+                    test_result = {"success": False, "message": safe_string(error)}
+
+            if test_result.get("success"):
+                st.sidebar.success(t(ui_language, "openai_success"))
+            else:
+                st.sidebar.error(t(ui_language, "openai_fail"))
+                if test_result.get("message"):
+                    st.sidebar.caption(safe_string(test_result.get("message")))
+
+        return selected_provider, ""
+
     st.sidebar.header(t(ui_language, "openrouter_status"))
 
     current_key = get_openrouter_api_key()
@@ -1006,6 +1132,8 @@ def main() -> None:
             spinner_text = t(ui_language, "spinner_local")
         elif ai_provider == "ollama":
             spinner_text = t(ui_language, "spinner_ollama")
+        elif ai_provider == "openai":
+            spinner_text = t(ui_language, "spinner_openai")
         else:
             spinner_text = t(ui_language, "spinner_openrouter")
 
