@@ -20,6 +20,7 @@ API 키가 없어도 앱 실행, PDF 업로드, PDF 텍스트 추출, 출처 지
 
 ```text
 PDF 文本提取
+PDF 内图片文字 OCR 提取
 多个 PDF 批量翻译和整理
 PDF 出处知识库生成
 自动搜索知识库
@@ -76,6 +77,8 @@ batch_pdf_translation_summary.json
 ```
 
 如果选择本地分析模式，批量处理不需要 API Key；如果选择 OpenAI/OpenRouter/Ollama，则每个 PDF 会按当前选择的 AI 模式逐个整理。
+
+如果 PDF 页面里插入了图片，程序会尽量对图片内容做 OCR 提取，并把识别到的文字加入同一页内容中。电脑没有安装 OCR 引擎时，普通 PDF 文本提取仍然可以继续使用。
 
 ### 2. 在网页内部手动输入 API Key
 

@@ -1,4 +1,5 @@
 from typing import Any
+import re
 
 
 DEFAULT_RESULT = {
@@ -22,6 +23,28 @@ def safe_string(value: Any) -> str:
         return str(value)
     except Exception:
         return ""
+
+
+def add_multilingual_spacing(text: Any) -> str:
+    """Add readable spaces between Latin, numbers, Chinese, Korean, and Japanese text."""
+    value = safe_string(text)
+    if not value:
+        return ""
+
+    han = r"\u3400-\u4dbf\u4e00-\u9fff"
+    hangul = r"\u1100-\u11ff\u3130-\u318f\uac00-\ud7af"
+    kana = r"\u3040-\u30ff"
+    cjk = han + hangul + kana
+    latin_number = r"A-Za-z0-9"
+
+    value = re.sub(rf"([{cjk}])([{latin_number}])", r"\1 \2", value)
+    value = re.sub(rf"([{latin_number}])([{cjk}])", r"\1 \2", value)
+    value = re.sub(rf"([{han}])([{hangul}{kana}])", r"\1 \2", value)
+    value = re.sub(rf"([{hangul}{kana}])([{han}])", r"\1 \2", value)
+    value = re.sub(r"([。！？；，、])(?=\S)", r"\1 ", value)
+    value = re.sub(r"([!?;])(?=[A-Za-z\u3400-\u4dbf\u4e00-\u9fff\u1100-\u11ff\u3130-\u318f\uac00-\ud7af])", r"\1 ", value)
+    value = re.sub(r"[ \t]{2,}", " ", value)
+    return value
 
 
 def safe_list(value: Any) -> list:

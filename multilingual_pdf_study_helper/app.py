@@ -21,7 +21,7 @@ from ai_client import (
     test_openrouter_connection,
 )
 from knowledge_base import search_knowledge_base
-from safe_utils import normalize_result, safe_list, safe_string
+from safe_utils import add_multilingual_spacing, normalize_result, safe_list, safe_string
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -192,6 +192,7 @@ TEXT = {
         "pdf_pages": "PDF 페이지",
         "source_entries": "출처 항목",
         "ocr_pages": "OCR 사용 페이지",
+        "ocr_images": "OCR 사용 이미지",
         "ocr_status": "OCR 상태",
         "page_status": "페이지별 추출 상태",
         "no_source_entries": "PDF에서 출처 지식베이스 항목을 만들 수 없습니다.",
@@ -296,6 +297,7 @@ TEXT = {
         "pdf_pages": "PDF pages",
         "source_entries": "Source entries",
         "ocr_pages": "OCR pages used",
+        "ocr_images": "OCR images used",
         "ocr_status": "OCR status",
         "page_status": "Page extraction status",
         "no_source_entries": "No source knowledge base entries could be created from the PDF.",
@@ -400,6 +402,7 @@ TEXT = {
         "pdf_pages": "PDF 页数",
         "source_entries": "来源条目",
         "ocr_pages": "使用 OCR 的页数",
+        "ocr_images": "使用 OCR 的图片数",
         "ocr_status": "OCR 状态",
         "page_status": "按页提取状态",
         "no_source_entries": "无法从 PDF 创建来源知识库条目。",
@@ -637,7 +640,7 @@ def show_list(ui_language: str, title_key: str, value) -> None:
 
 
 def format_math_text(text: str) -> str:
-    formatted = safe_string(text)
+    formatted = add_multilingual_spacing(text)
     replacements = {
         "\\\\frac": "\\frac",
         "\\\\sqrt": "\\sqrt",
@@ -729,7 +732,7 @@ def show_knowledge_references(ui_language: str, value) -> None:
             content = safe_string(reference)
 
         with st.expander(title):
-            st.write(content or t(ui_language, "content_empty"))
+            st.write(add_multilingual_spacing(content) or t(ui_language, "content_empty"))
             source_url = safe_string(reference.get("source_url")) if isinstance(reference, dict) else ""
             if source_url:
                 st.markdown(f"[Material link / 자료 링크 / 资料链接]({source_url})")
@@ -745,7 +748,7 @@ def show_knowledge_item_body(ui_language: str, item: dict) -> None:
 
     if keywords:
         st.caption(f"{t(ui_language, 'keywords')}: {keywords}")
-    st.write(safe_string(item.get("content")) or t(ui_language, "content_empty"))
+    st.write(add_multilingual_spacing(item.get("content")) or t(ui_language, "content_empty"))
     if source_url:
         st.markdown(f"[Material link / 자료 링크 / 资料链接]({source_url})")
 
@@ -792,7 +795,7 @@ def build_source_markdown(entries) -> str:
                 f"## {index}. {safe_string(entry.get('title')) or 'Knowledge item'}",
                 f"- Source: {safe_string(source.get('label'))}",
                 "",
-                safe_string(entry.get("content")),
+                add_multilingual_spacing(entry.get("content")),
                 "",
             ]
         )
@@ -806,10 +809,11 @@ def show_pdf_source_inventory(ui_language: str, result: dict, key_prefix: str = 
     pages = safe_list(result.get("pdf_pages"))
     ocr_info = result.get("ocr") if isinstance(result.get("ocr"), dict) else {}
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric(t(ui_language, "pdf_pages"), len(pages))
     col2.metric(t(ui_language, "source_entries"), len(entries))
     col3.metric(t(ui_language, "ocr_pages"), ocr_info.get("pages_used", 0))
+    col4.metric(t(ui_language, "ocr_images"), ocr_info.get("images_used", 0))
 
     if ocr_info.get("errors"):
         with st.expander(t(ui_language, "ocr_status")):
@@ -855,7 +859,7 @@ def show_pdf_source_inventory(ui_language: str, result: dict, key_prefix: str = 
     for entry in filtered_entries[:30]:
         source = entry.get("source") if isinstance(entry.get("source"), dict) else {}
         with st.expander(safe_string(source.get("label")) or safe_string(entry.get("title"))):
-            st.write(safe_string(entry.get("content")))
+            st.write(add_multilingual_spacing(entry.get("content")))
 
     st.download_button(
         t(ui_language, "download_md"),
@@ -886,16 +890,16 @@ def show_glossary(ui_language: str, value) -> None:
         if isinstance(term, dict):
             rows.append(
                 {
-                    "English": safe_string(term.get("english")),
-                    "Korean": safe_string(term.get("korean")),
-                    "Chinese": safe_string(term.get("chinese")),
-                    "Explanation": safe_string(term.get("explanation")),
+                    "English": add_multilingual_spacing(term.get("english")),
+                    "Korean": add_multilingual_spacing(term.get("korean")),
+                    "Chinese": add_multilingual_spacing(term.get("chinese")),
+                    "Explanation": add_multilingual_spacing(term.get("explanation")),
                 }
             )
         else:
             rows.append(
                 {
-                    "English": safe_string(term),
+                    "English": add_multilingual_spacing(term),
                     "Korean": "",
                     "Chinese": "",
                     "Explanation": "",
@@ -917,7 +921,7 @@ def show_local_processing_result(ui_language: str, result: dict) -> None:
 
     if text_preview:
         with st.expander(t(ui_language, "preview")):
-            st.write(text_preview)
+            st.write(add_multilingual_spacing(text_preview))
 
     st.subheader(t(ui_language, "knowledge_status"))
     search_count = result.get("knowledge_search_count", 0)
@@ -961,19 +965,19 @@ def show_analysis_result(ui_language: str, result: dict, key_prefix: str = "sing
 def build_result_markdown(file_name: str, result: dict) -> str:
     safe_result = normalize_result(result)
     lines = [
-        f"# {safe_string(file_name) or safe_string(safe_result.get('title')) or 'PDF'}",
+        f"# {add_multilingual_spacing(file_name) or add_multilingual_spacing(safe_result.get('title')) or 'PDF'}",
         "",
-        f"- Title: {safe_string(safe_result.get('title'))}",
-        f"- AI provider: {safe_string(safe_result.get('ai_provider_label'))}",
+        f"- Title: {add_multilingual_spacing(safe_result.get('title'))}",
+        f"- AI provider: {add_multilingual_spacing(safe_result.get('ai_provider_label'))}",
         f"- Extracted text length: {safe_result.get('pdf_text_length', 0)}",
         f"- Knowledge items: {safe_result.get('knowledge_search_count', 0)}",
         "",
     ]
 
     if safe_result.get("warning"):
-        lines.extend(["## Warning", safe_string(safe_result.get("warning")), ""])
+        lines.extend(["## Warning", add_multilingual_spacing(safe_result.get("warning")), ""])
     if safe_result.get("error"):
-        lines.extend(["## Error", safe_string(safe_result.get("error")), ""])
+        lines.extend(["## Error", add_multilingual_spacing(safe_result.get("error")), ""])
 
     sections = [
         ("Key Concepts", safe_result.get("concepts")),
@@ -982,14 +986,14 @@ def build_result_markdown(file_name: str, result: dict) -> str:
     ]
     for title, value in sections:
         lines.extend([f"## {title}", ""])
-        items = [safe_string(item) for item in safe_list(value) if safe_string(item)]
+        items = [add_multilingual_spacing(item) for item in safe_list(value) if safe_string(item)]
         if items:
             lines.extend([f"- {item}" for item in items])
         else:
             lines.append("- No content.")
         lines.append("")
 
-    lines.extend(["## Detailed Explanation", "", safe_string(safe_result.get("details")), ""])
+    lines.extend(["## Detailed Explanation", "", add_multilingual_spacing(safe_result.get("details")), ""])
 
     glossary = safe_list(safe_result.get("glossary"))
     if glossary:
@@ -998,10 +1002,10 @@ def build_result_markdown(file_name: str, result: dict) -> str:
             if isinstance(item, dict):
                 lines.append(
                     "- "
-                    f"{safe_string(item.get('english'))} / "
-                    f"{safe_string(item.get('korean'))} / "
-                    f"{safe_string(item.get('chinese'))}: "
-                    f"{safe_string(item.get('explanation'))}"
+                    f"{add_multilingual_spacing(item.get('english'))} / "
+                    f"{add_multilingual_spacing(item.get('korean'))} / "
+                    f"{add_multilingual_spacing(item.get('chinese'))}: "
+                    f"{add_multilingual_spacing(item.get('explanation'))}"
                 )
         lines.append("")
 
@@ -1010,13 +1014,13 @@ def build_result_markdown(file_name: str, result: dict) -> str:
         lines.extend(["## Review Questions", ""])
         for index, item in enumerate(quiz_items, start=1):
             if not isinstance(item, dict):
-                lines.append(f"{index}. {safe_string(item)}")
+                lines.append(f"{index}. {add_multilingual_spacing(item)}")
                 continue
             lines.extend(
                 [
-                    f"{index}. {safe_string(item.get('question'))}",
-                    f"   - Answer: {safe_string(item.get('answer'))}",
-                    f"   - Explanation: {safe_string(item.get('explanation'))}",
+                    f"{index}. {add_multilingual_spacing(item.get('question'))}",
+                    f"   - Answer: {add_multilingual_spacing(item.get('answer'))}",
+                    f"   - Explanation: {add_multilingual_spacing(item.get('explanation'))}",
                 ]
             )
         lines.append("")
@@ -1049,12 +1053,12 @@ def show_batch_downloads(ui_language: str, batch_results: list[dict]) -> None:
         result = normalize_result(item.get("result") if isinstance(item.get("result"), dict) else {})
         rows.append(
             {
-                "File": safe_string(item.get("file_name")),
-                "Title": safe_string(result.get("title")),
-                "Provider": safe_string(result.get("ai_provider_label")),
+                "File": add_multilingual_spacing(item.get("file_name")),
+                "Title": add_multilingual_spacing(result.get("title")),
+                "Provider": add_multilingual_spacing(result.get("ai_provider_label")),
                 "Text length": result.get("pdf_text_length", 0),
                 "Knowledge items": result.get("knowledge_search_count", 0),
-                "Error": safe_string(result.get("error")),
+                "Error": add_multilingual_spacing(result.get("error")),
             }
         )
     st.table(rows)

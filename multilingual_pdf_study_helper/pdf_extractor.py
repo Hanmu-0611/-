@@ -1,8 +1,10 @@
 from pathlib import Path
+from io import BytesIO
 import os
 import re
 
 from pypdf import PdfReader
+from safe_utils import add_multilingual_spacing
 
 try:
     import fitz
@@ -146,7 +148,7 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\n\s*([+\-*/=<>])\s*\n", r" \1 ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     text = remove_garbled_lines(text)
-    return text.strip()
+    return add_multilingual_spacing(text).strip()
 
 
 def is_formula_like(line: str) -> bool:
@@ -273,6 +275,78 @@ def ocr_page(file_path: str, page_index: int) -> tuple[str, str]:
         return "", str(error)
 
 
+def ocr_pil_image(image) -> tuple[str, str]:
+    """OCR one PIL image. Return extracted text and an error message."""
+    if Image is None:
+        return "", "OCR 이미지 처리 라이브러리가 설치되어 있지 않습니다."
+
+    if pytesseract is not None:
+        try:
+            pytesseract.get_tesseract_version()
+            text = pytesseract.image_to_string(image, lang=OCR_LANGUAGES)
+            if text.strip():
+                return clean_text(text), ""
+        except Exception:
+            pass
+
+    if USE_MACOS_VISION_OCR and mac_ocr is not None:
+        mac_errors = []
+        for framework in ("vision", "livetext"):
+            try:
+                results = mac_ocr.OCR(
+                    image,
+                    framework=framework,
+                    language_preference=["ko-KR", "zh-Hans", "en-US"],
+                    detail=True,
+                ).recognize()
+                text = "\n".join(item[0] for item in results if item and item[0])
+                if text.strip():
+                    return clean_text(text), ""
+            except Exception as error:
+                mac_errors.append(f"{framework}: {error}")
+
+        if mac_errors:
+            return "", "macOS OCR 오류: " + " | ".join(mac_errors)
+
+    return "", "OCR 엔진을 찾을 수 없습니다. Tesseract OCR 설치가 필요합니다."
+
+
+def ocr_embedded_images(file_path: str, page_index: int) -> tuple[list[str], list[str]]:
+    """Extract and OCR images embedded in a PDF page."""
+    if fitz is None or Image is None:
+        return [], ["OCR 이미지 처리 라이브러리가 설치되어 있지 않습니다."]
+
+    image_texts: list[str] = []
+    image_errors: list[str] = []
+
+    try:
+        with fitz.open(file_path) as document:
+            page = document.load_page(page_index)
+            image_refs = page.get_images(full=True)
+            for image_number, image_ref in enumerate(image_refs, start=1):
+                xref = image_ref[0]
+                try:
+                    image_info = document.extract_image(xref)
+                    image_bytes = image_info.get("image")
+                    if not image_bytes:
+                        continue
+                    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+                    width, height = image.size
+                    if width < 80 or height < 40:
+                        continue
+                    image_text, image_error = ocr_pil_image(image)
+                    if image_text:
+                        image_texts.append(f"[Image {image_number} OCR]\n{image_text}")
+                    elif image_error:
+                        image_errors.append(f"image {image_number}: {image_error}")
+                except Exception as error:
+                    image_errors.append(f"image {image_number}: {error}")
+    except Exception as error:
+        image_errors.append(str(error))
+
+    return image_texts, image_errors
+
+
 def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
     """Extract text, pages, and source-linked knowledge entries from a PDF."""
     path = Path(file_path)
@@ -297,6 +371,7 @@ def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
     page_items: list[dict] = []
     knowledge_entries: list[dict] = []
     ocr_pages_used = 0
+    ocr_images_used = 0
     ocr_errors: list[dict] = []
 
     try:
@@ -327,6 +402,19 @@ def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
                     ocr_errors.append({"page": page_index, "error": ocr_error})
                     if "인코딩 깨짐" not in text:
                         text = remove_garbled_lines(text)
+
+            if use_ocr and extraction_method != "ocr":
+                image_texts, image_errors = ocr_embedded_images(str(path), page_index - 1)
+                if image_texts:
+                    text = "\n\n".join([text, *image_texts]).strip()
+                    extraction_method = (
+                        "pdf_text+image_ocr"
+                        if extraction_method == "pdf_text"
+                        else f"{extraction_method}+image_ocr"
+                    )
+                    ocr_images_used += len(image_texts)
+                for image_error in image_errors[:3]:
+                    ocr_errors.append({"page": page_index, "error": image_error})
 
             paragraphs = split_paragraphs(text)
             for paragraph_index, paragraph in enumerate(paragraphs, start=1):
@@ -368,6 +456,7 @@ def extract_pdf_document(file_path: str, use_ocr: bool = True) -> dict:
             "languages": OCR_LANGUAGES,
             "macos_vision_available": USE_MACOS_VISION_OCR and mac_ocr is not None,
             "pages_used": ocr_pages_used,
+            "images_used": ocr_images_used,
             "errors": ocr_errors[:10],
         },
     }
