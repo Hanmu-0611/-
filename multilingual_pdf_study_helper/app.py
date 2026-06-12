@@ -144,6 +144,10 @@ TEXT = {
         "ollama_model": "Ollama 모델",
         "save_ollama_model": "Ollama 모델 저장",
         "saved": "저장했습니다. 다시 분석을 실행해주세요.",
+        "save_login": "로그인 저장",
+        "logout": "로그아웃",
+        "logged_out": "로그아웃했습니다. API Key를 비웠습니다.",
+        "api_login_required": "저장할 API Key를 입력해주세요.",
         "test_ollama": "Ollama 연결 테스트",
         "checking_ollama": "Ollama 연결을 확인하는 중입니다...",
         "ollama_success": "Ollama 연결 성공! 로컬 AI 분석을 사용할 수 있습니다.",
@@ -166,7 +170,7 @@ TEXT = {
         "api_key_invalid": "저장된 API Key 형식이 OpenRouter 형식이 아닙니다.",
         "api_key_missing": "API Key가 없어 AI 요약은 건너뛰고 로컬 분석만 사용합니다.",
         "api_settings": "API Key 설정",
-        "save_api_settings": "API 설정 저장",
+        "save_api_settings": "로그인 저장",
         "api_key_hint": "OpenRouter API Key는 보통 sk-or-v1- 로 시작합니다. 다시 확인해주세요.",
         "default_model_caption": "모델명은 자동으로 설정됩니다. 사용자는 API Key만 입력하면 됩니다.",
         "test_openrouter": "OpenRouter 연결 테스트",
@@ -249,6 +253,10 @@ TEXT = {
         "ollama_model": "Ollama model",
         "save_ollama_model": "Save Ollama model",
         "saved": "Saved. Please run the analysis again.",
+        "save_login": "Save login",
+        "logout": "Log out",
+        "logged_out": "Logged out. The API key has been cleared.",
+        "api_login_required": "Please enter an API key to save.",
         "test_ollama": "Test Ollama connection",
         "checking_ollama": "Checking Ollama connection...",
         "ollama_success": "Ollama connected! Local AI analysis is available.",
@@ -271,7 +279,7 @@ TEXT = {
         "api_key_invalid": "The saved API key is not in the OpenRouter format.",
         "api_key_missing": "No API key found. AI summary will be skipped and local analysis will be used.",
         "api_settings": "API key settings",
-        "save_api_settings": "Save API settings",
+        "save_api_settings": "Save login",
         "api_key_hint": "OpenRouter API keys usually start with sk-or-v1-. Please check again.",
         "default_model_caption": "The model is selected automatically. Users only need to enter an API key.",
         "test_openrouter": "Test OpenRouter connection",
@@ -354,6 +362,10 @@ TEXT = {
         "ollama_model": "Ollama 模型",
         "save_ollama_model": "保存 Ollama 模型",
         "saved": "已保存。请重新运行分析。",
+        "save_login": "保存登录",
+        "logout": "退出登录",
+        "logged_out": "已退出登录，API Key 已清空。",
+        "api_login_required": "请输入要保存的 API Key。",
         "test_ollama": "测试 Ollama 连接",
         "checking_ollama": "正在检查 Ollama 连接...",
         "ollama_success": "Ollama 连接成功！可以使用本地 AI 分析。",
@@ -376,7 +388,7 @@ TEXT = {
         "api_key_invalid": "保存的 API Key 不是 OpenRouter 格式。",
         "api_key_missing": "没有 API Key，将跳过 AI 摘要并只使用本地分析。",
         "api_settings": "API Key 设置",
-        "save_api_settings": "保存 API 设置",
+        "save_api_settings": "保存登录",
         "api_key_hint": "OpenRouter API Key 通常以 sk-or-v1- 开头。请重新确认。",
         "default_model_caption": "模型已自动设置，普通用户只需要输入 API Key。",
         "test_openrouter": "测试 OpenRouter 连接",
@@ -1144,13 +1156,22 @@ def show_ai_settings_sidebar(ui_language: str) -> tuple[str, str]:
                 type="password",
                 placeholder="sk-...",
             )
-            if st.button(t(ui_language, "save_api_settings"), key="save_openai_settings"):
+            if st.button(t(ui_language, "save_login"), key="save_openai_settings"):
                 key_to_save = api_key_input.strip() or current_key
+                if not key_to_save:
+                    st.sidebar.error(t(ui_language, "api_login_required"))
+                    return selected_provider, ""
                 if key_to_save and not openai_key_looks_valid(normalize_openai_api_key(key_to_save)):
                     st.sidebar.error(t(ui_language, "openai_key_hint"))
                     return selected_provider, ""
                 if save_openai_settings(key_to_save, ui_language):
                     st.sidebar.success(t(ui_language, "saved"))
+                    st.rerun()
+
+            if st.button(t(ui_language, "logout"), key="logout_openai"):
+                if save_openai_settings("", ui_language):
+                    st.sidebar.success(t(ui_language, "logged_out"))
+                    st.rerun()
 
         st.sidebar.caption(t(ui_language, "openai_model_caption"))
 
@@ -1182,19 +1203,28 @@ def show_ai_settings_sidebar(ui_language: str) -> tuple[str, str]:
     else:
         st.sidebar.warning(t(ui_language, "api_key_missing"))
 
-    with st.sidebar.expander(t(ui_language, "api_settings")):
+    with st.sidebar.expander(t(ui_language, "api_settings"), expanded=True):
         api_key_input = st.text_input(
             "OpenRouter API Key",
             type="password",
             placeholder="sk-or-v1-...",
         )
-        if st.button(t(ui_language, "save_api_settings")):
+        if st.button(t(ui_language, "save_login"), key="save_openrouter_settings"):
             key_to_save = api_key_input.strip() or current_key
+            if not key_to_save:
+                st.sidebar.error(t(ui_language, "api_login_required"))
+                return selected_provider, ""
             if key_to_save and not openrouter_key_looks_valid(normalize_openrouter_api_key(key_to_save)):
                 st.sidebar.error(t(ui_language, "api_key_hint"))
                 return selected_provider, ""
             if save_openrouter_settings(key_to_save, ui_language):
                 st.sidebar.success(t(ui_language, "saved"))
+                st.rerun()
+
+        if st.button(t(ui_language, "logout"), key="logout_openrouter"):
+            if save_openrouter_settings("", ui_language):
+                st.sidebar.success(t(ui_language, "logged_out"))
+                st.rerun()
 
     st.sidebar.caption(t(ui_language, "default_model_caption"))
 

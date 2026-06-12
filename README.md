@@ -118,6 +118,8 @@ API 설정 저장
 
 OpenAI 和 OpenRouter 的模型都会由程序自动选择，普通用户不需要知道或填写模型名。
 
+网页左侧也提供 `保存登录` 和 `退出登录`。保存登录会把 API Key 存到本地 `.env`，下次打开仍可使用；退出登录会清空当前服务的 API Key。
+
 ## 실행 방법
 
 최종 앱은 `multilingual_pdf_study_helper` 폴더 안에 있습니다.
