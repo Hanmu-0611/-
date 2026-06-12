@@ -627,6 +627,24 @@ def show_knowledge_references(ui_language: str, value) -> None:
 
         with st.expander(title):
             st.write(content or t(ui_language, "content_empty"))
+            source_url = safe_string(reference.get("source_url")) if isinstance(reference, dict) else ""
+            if source_url:
+                st.markdown(f"[Material link / 자료 링크 / 资料链接]({source_url})")
+
+
+def show_knowledge_item_body(ui_language: str, item: dict) -> None:
+    keywords = ", ".join(
+        safe_string(keyword)
+        for keyword in safe_list(item.get("keywords"))
+        if safe_string(keyword)
+    )
+    source_url = safe_string(item.get("source_url"))
+
+    if keywords:
+        st.caption(f"{t(ui_language, 'keywords')}: {keywords}")
+    st.write(safe_string(item.get("content")) or t(ui_language, "content_empty"))
+    if source_url:
+        st.markdown(f"[Material link / 자료 링크 / 资料链接]({source_url})")
 
 
 def show_auto_knowledge_search(ui_language: str, result: dict) -> None:
@@ -639,16 +657,8 @@ def show_auto_knowledge_search(ui_language: str, result: dict) -> None:
             if not isinstance(item, dict):
                 continue
             title = safe_string(item.get("title")) or t(ui_language, "reference")
-            content = safe_string(item.get("content"))
-            keywords = ", ".join(
-                safe_string(keyword)
-                for keyword in safe_list(item.get("keywords"))
-                if safe_string(keyword)
-            )
             with st.expander(title):
-                if keywords:
-                    st.caption(f"{t(ui_language, 'keywords')}: {keywords}")
-                st.write(content or t(ui_language, "content_empty"))
+                show_knowledge_item_body(ui_language, item)
     else:
         st.info(t(ui_language, "no_auto_knowledge"))
 
@@ -663,7 +673,7 @@ def show_auto_knowledge_search(ui_language: str, result: dict) -> None:
             if not isinstance(item, dict):
                 continue
             with st.expander(safe_string(item.get("title")) or t(ui_language, "reference")):
-                st.write(safe_string(item.get("content")) or t(ui_language, "content_empty"))
+                show_knowledge_item_body(ui_language, item)
 
 
 def build_source_markdown(entries) -> str:

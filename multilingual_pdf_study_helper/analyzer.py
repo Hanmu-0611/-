@@ -113,6 +113,7 @@ def build_local_analysis_result(
                 {
                     "title": safe_string(item.get("title")) or labels["item"],
                     "content": safe_string(item.get("content")),
+                    "source_url": safe_string(item.get("source_url")),
                 }
                 for item in knowledge_results
                 if isinstance(item, dict)
@@ -160,7 +161,7 @@ def analyze_pdf(
         )
 
     try:
-        knowledge_results = search_knowledge_base(pdf_text, top_k=5)
+        knowledge_results = search_knowledge_base(pdf_text, top_k=8)
     except Exception:
         knowledge_results = []
 
@@ -252,6 +253,7 @@ def analyze_pdf(
             {
                 "title": safe_string(item.get("title")) or item_label,
                 "content": safe_string(item.get("content")),
+                "source_url": safe_string(item.get("source_url")),
             }
             for item in knowledge_results
             if isinstance(item, dict)

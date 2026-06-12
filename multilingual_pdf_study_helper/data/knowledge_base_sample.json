@@ -1,27 +1,255 @@
 [
   {
-    "title": "Linear Independence",
-    "keywords": ["linear independence", "linearly independent", "선형독립", "线性无关"],
-    "content": "Linear Independence는 어떤 벡터가 다른 벡터들의 선형결합으로 표현되지 않는 성질이다. 벡터 집합에서 영벡터를 만드는 계수가 모두 0일 때 선형독립이라고 한다."
+    "title": "Linear Independence / 선형독립 / 线性无关",
+    "subject": "Mathematics",
+    "language": "English, Korean, Chinese",
+    "keywords": ["linear independence", "linearly independent", "선형독립", "线性无关", "线性独立"],
+    "content": "Linear Independence는 어떤 벡터가 다른 벡터들의 선형결합으로 표현되지 않는 성질이다. A set of vectors is linearly independent when only the all-zero coefficient combination makes the zero vector. 中文：线性无关表示向量组中没有向量可以由其他向量线性表示。"
   },
   {
-    "title": "Basis",
-    "keywords": ["basis", "기저", "基", "基底"],
-    "content": "Basis는 공간을 span하면서 동시에 linearly independent인 벡터들의 집합이다. 기저를 알면 그 공간의 모든 벡터를 좌표로 표현할 수 있다."
+    "title": "Basis / 기저 / 基",
+    "subject": "Mathematics",
+    "language": "English, Korean, Chinese",
+    "keywords": ["basis", "기저", "基", "基底", "coordinate"],
+    "content": "Basis는 공간을 span하면서 동시에 linearly independent인 벡터들의 집합이다. A basis lets every vector in a space be represented with coordinates. 中文：基是一组既能张成空间又线性无关的向量。"
   },
   {
-    "title": "Span",
-    "keywords": ["span", "linear span", "생성공간", "张成"],
-    "content": "Span은 주어진 벡터들의 모든 선형결합으로 만들 수 있는 벡터들의 집합이다. 어떤 벡터들이 공간 전체를 만들 수 있는지 확인할 때 사용한다."
+    "title": "Span / 생성공간 / 张成空间",
+    "subject": "Mathematics",
+    "language": "English, Korean, Chinese",
+    "keywords": ["span", "linear span", "생성공간", "张成", "张成空间"],
+    "content": "Span은 주어진 벡터들의 모든 선형결합으로 만들 수 있는 벡터들의 집합이다. English: span describes all vectors reachable from linear combinations. 中文：张成空间是由给定向量的所有线性组合构成的集合。"
   },
   {
-    "title": "Derivative",
-    "keywords": ["derivative", "differentiation", "미분", "导数"],
-    "content": "Derivative는 함수의 순간 변화율을 나타낸다. 그래프에서는 한 점에서의 접선의 기울기로 해석할 수 있다."
+    "title": "Derivative / 미분 / 导数",
+    "subject": "Mathematics",
+    "language": "English, Korean, Chinese",
+    "keywords": ["derivative", "differentiation", "미분", "导数", "微分", "rate of change"],
+    "content": "Derivative는 함수의 순간 변화율을 나타낸다. English: it can be interpreted as the slope of the tangent line. 中文：导数表示函数在某一点的瞬时变化率。"
   },
   {
-    "title": "Time Complexity",
-    "keywords": ["time complexity", "big o", "시간복잡도", "时间复杂度"],
-    "content": "Time Complexity는 입력 크기가 커질 때 알고리즘 실행 시간이 어떻게 증가하는지 나타내는 개념이다. Big-O 표기법으로 자주 표현한다."
+    "title": "Time Complexity / 시간복잡도 / 时间复杂度",
+    "subject": "Computer Science",
+    "language": "English, Korean, Chinese",
+    "keywords": ["time complexity", "big o", "시간복잡도", "时间复杂度", "Big-O", "algorithm"],
+    "content": "Time Complexity는 입력 크기가 커질 때 알고리즘 실행 시간이 어떻게 증가하는지 나타내는 개념이다. English: it is often expressed with Big-O notation. 中文：时间复杂度描述输入规模增加时算法运行时间的增长趋势。"
+  },
+  {
+    "title": "Artificial Intelligence / 인공지능 / 人工智能",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["artificial intelligence", "ai", "인공지능", "人工智能", "智能系统", "지능형 시스템"],
+    "content": "Artificial Intelligence is the study of systems that perform tasks usually associated with human intelligence, such as reasoning, perception, language, planning, and decision making. 한국어: 인공지능은 추론, 인식, 언어, 계획, 의사결정 같은 지능적 기능을 수행하는 시스템을 연구한다. 中文：人工智能研究能够执行推理、感知、语言理解、规划和决策等智能任务的系统。"
+  },
+  {
+    "title": "Machine Learning / 머신러닝 / 机器学习",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["machine learning", "ml", "머신러닝", "기계학습", "机器学习", "training data", "학습 데이터", "训练数据"],
+    "content": "Machine Learning trains models from data instead of writing every rule by hand. 한국어: 머신러닝은 데이터에서 패턴을 학습해 예측이나 분류를 수행한다. 中文：机器学习通过训练数据学习模式，用于预测、分类、推荐和决策。"
+  },
+  {
+    "title": "Supervised Learning / 지도학습 / 监督学习",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["supervised learning", "label", "labeled data", "지도학습", "라벨", "监督学习", "标注数据"],
+    "content": "Supervised learning uses labeled examples, such as input-output pairs, to train a model. 한국어: 지도학습은 정답 라벨이 있는 데이터로 모델을 학습한다. 中文：监督学习使用带标签的数据训练模型，例如分类和回归任务。"
+  },
+  {
+    "title": "Unsupervised Learning / 비지도학습 / 无监督学习",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["unsupervised learning", "clustering", "비지도학습", "군집화", "无监督学习", "聚类"],
+    "content": "Unsupervised learning finds structure in data without explicit labels. 한국어: 비지도학습은 정답 라벨 없이 데이터의 숨은 패턴이나 군집을 찾는다. 中文：无监督学习在没有标签的情况下发现数据结构，常见任务包括聚类和降维。"
+  },
+  {
+    "title": "Reinforcement Learning / 강화학습 / 强化学习",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["reinforcement learning", "reward", "policy", "agent", "강화학습", "보상", "정책", "强化学习", "奖励", "策略"],
+    "content": "Reinforcement learning trains an agent to choose actions by receiving rewards from an environment. 한국어: 강화학습은 에이전트가 환경과 상호작용하며 보상을 최대화하는 정책을 학습한다. 中文：强化学习让智能体通过与环境互动和获得奖励来学习策略。"
+  },
+  {
+    "title": "Neural Networks / 신경망 / 神经网络",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["neural network", "deep learning", "신경망", "딥러닝", "神经网络", "深度学习", "activation function"],
+    "content": "Neural networks are models made of layers of connected units that transform inputs into outputs. 한국어: 신경망은 여러 층의 노드가 입력을 변환해 예측을 만드는 모델이다. 中文：神经网络由多层连接单元组成，通过权重和激活函数学习复杂模式。"
+  },
+  {
+    "title": "Large Language Models / 대규모 언어모델 / 大语言模型",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["large language model", "llm", "transformer", "token", "대규모 언어모델", "언어모델", "토큰", "大语言模型", "Transformer", "词元"],
+    "content": "Large Language Models predict and generate text using patterns learned from large text corpora. 한국어: 대규모 언어모델은 토큰 단위로 문맥을 학습해 문장 생성, 요약, 번역, 질의응답에 활용된다. 中文：大语言模型基于大量文本学习语言规律，可用于生成、摘要、翻译和问答。"
+  },
+  {
+    "title": "Natural Language Processing / 자연어처리 / 自然语言处理",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["natural language processing", "nlp", "text classification", "sentiment analysis", "자연어처리", "텍스트 분류", "감성분석", "自然语言处理", "文本分类", "情感分析"],
+    "content": "Natural Language Processing studies how computers analyze, understand, and generate human language. 한국어: 자연어처리는 번역, 요약, 검색, 챗봇, 감성분석에 사용된다. 中文：自然语言处理研究计算机如何理解和生成自然语言，应用包括翻译、摘要、检索和聊天机器人。"
+  },
+  {
+    "title": "Model Evaluation / 모델 평가 / 模型评估",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["model evaluation", "accuracy", "precision", "recall", "f1 score", "confusion matrix", "모델 평가", "정확도", "정밀도", "재현율", "模型评估", "准确率", "精确率", "召回率"],
+    "content": "Model evaluation checks whether a model performs well on data it has not seen. 한국어: 분류에서는 정확도, 정밀도, 재현율, F1 점수, 혼동행렬을 자주 사용한다. 中文：模型评估用于判断模型在新数据上的表现，常用指标包括准确率、精确率、召回率和 F1。"
+  },
+  {
+    "title": "Overfitting and Generalization / 과적합과 일반화 / 过拟合与泛化",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["overfitting", "generalization", "validation set", "regularization", "과적합", "일반화", "검증 데이터", "过拟合", "泛化", "验证集"],
+    "content": "Overfitting happens when a model memorizes training data but performs poorly on new data. 한국어: 일반화는 모델이 처음 보는 데이터에도 잘 작동하는 능력이다. 中文：过拟合指模型过度记住训练数据而不能很好泛化到新数据。"
+  },
+  {
+    "title": "Responsible AI / 책임 있는 AI / 负责任人工智能",
+    "subject": "AI",
+    "language": "English, Korean, Chinese",
+    "keywords": ["responsible ai", "fairness", "bias", "privacy", "transparency", "책임 있는 AI", "공정성", "편향", "개인정보", "负责任人工智能", "公平性", "偏见", "隐私"],
+    "content": "Responsible AI focuses on fairness, transparency, privacy, accountability, and safety. 한국어: 책임 있는 AI는 편향 완화, 설명 가능성, 개인정보 보호, 사회적 영향 평가를 포함한다. 中文：负责任人工智能关注公平性、透明性、隐私保护、责任归属和安全性。"
+  },
+  {
+    "title": "Elements of AI - Free AI Course",
+    "subject": "AI Material",
+    "language": "English and multiple languages",
+    "keywords": ["elements of ai", "free ai course", "ai course", "인공지능 무료 강의", "人工智能免费课程"],
+    "content": "Free introductory AI course created by the University of Helsinki and MinnaLearn. It covers basic AI ideas, machine learning, neural networks, and societal implications. 한국어: AI 입문 학습 자료로 활용할 수 있다. 中文：适合作为人工智能入门免费材料。",
+    "source_url": "https://www.elementsofai.com/"
+  },
+  {
+    "title": "Google Machine Learning Crash Course - Free ML Material",
+    "subject": "AI Material",
+    "language": "English, Korean, Chinese and more",
+    "keywords": ["google machine learning crash course", "mlcc", "machine learning crash course", "머신러닝 무료 강의", "机器学习免费课程"],
+    "content": "Google's free Machine Learning Crash Course includes videos, interactive visualizations, and hands-on exercises for linear regression, classification, neural networks, LLMs, production ML, and fairness. 한국어/中文 학습자가 브라우저 언어를 선택해 참고할 수 있다.",
+    "source_url": "https://developers.google.com/machine-learning/crash-course"
+  },
+  {
+    "title": "K-MOOC and KOCW - Korean Free AI Learning Search",
+    "subject": "AI Material",
+    "language": "Korean",
+    "keywords": ["K-MOOC", "KOCW", "인공지능 강의", "머신러닝 강의", "딥러닝 강의", "AI 무료 강의", "한국어 인공지능"],
+    "content": "K-MOOC와 KOCW는 한국어 대학 공개강의와 온라인 강좌를 찾을 수 있는 무료 학습 플랫폼이다. 검색어로 인공지능, 머신러닝, 딥러닝, 데이터사이언스, 자연어처리를 입력하면 관련 한국어 강의를 찾을 수 있다. 中文：适合寻找韩语 AI 免费课程材料。",
+    "source_url": "https://www.kmooc.kr/"
+  },
+  {
+    "title": "XuetangX and Smart Education China - Chinese AI Learning Search",
+    "subject": "AI Material",
+    "language": "Chinese",
+    "keywords": ["学堂在线", "国家智慧教育平台", "人工智能课程", "机器学习课程", "深度学习课程", "中文AI课程", "中文人工智能"],
+    "content": "学堂在线和国家智慧教育公共服务平台可用于查找中文人工智能、机器学习、深度学习、数据科学课程。한국어: 중국어 AI 학습 자료를 찾을 때 유용하다. English: useful for Chinese-language AI course discovery.",
+    "source_url": "https://www.xuetangx.com/"
+  },
+  {
+    "title": "Psychology as a Science / 심리학의 과학성 / 心理学作为科学",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["psychology as science", "scientific psychology", "심리학", "과학적 심리학", "心理学", "科学心理学", "心理学作为科学"],
+    "content": "Psychology is the scientific study of behavior and mental processes. 한국어: 심리학은 행동과 마음의 과정을 과학적 방법으로 연구한다. 中文：心理学是研究行为和心理过程的科学，强调观察、测量、假设检验和证据。"
+  },
+  {
+    "title": "Research Methods in Psychology / 심리학 연구방법 / 心理学研究方法",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["research methods", "experiment", "correlation", "variable", "심리학 연구방법", "실험", "상관", "변인", "心理学研究方法", "实验", "相关", "变量"],
+    "content": "Psychological research uses experiments, correlational studies, surveys, observation, and case studies. 한국어: 실험은 인과관계 검증에 강하고, 상관연구는 변수 간 관련성을 설명하지만 인과를 단정하지 않는다. 中文：实验研究适合检验因果关系，相关研究说明变量关系但不能直接证明因果。"
+  },
+  {
+    "title": "Cognitive Psychology / 인지심리학 / 认知心理学",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["cognitive psychology", "attention", "memory", "thinking", "인지심리학", "주의", "기억", "사고", "认知心理学", "注意", "记忆", "思维"],
+    "content": "Cognitive psychology studies attention, perception, memory, language, problem solving, and decision making. 한국어: 인지심리학은 사람이 정보를 받아들이고 저장하고 활용하는 과정을 연구한다. 中文：认知心理学研究人如何加工信息，包括注意、知觉、记忆、语言和决策。"
+  },
+  {
+    "title": "Learning and Conditioning / 학습과 조건형성 / 学习与条件作用",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["learning", "conditioning", "classical conditioning", "operant conditioning", "학습", "조건형성", "고전적 조건형성", "조작적 조건형성", "学习", "条件作用", "经典条件作用", "操作性条件作用"],
+    "content": "Learning refers to relatively lasting changes in behavior or knowledge from experience. 한국어: 고전적 조건형성은 자극 간 연합, 조작적 조건형성은 행동과 결과의 관계를 강조한다. 中文：学习是经验导致的行为或知识变化，经典条件作用强调刺激联结，操作性条件作用强调行为后果。"
+  },
+  {
+    "title": "Memory / 기억 / 记忆",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["memory", "encoding", "storage", "retrieval", "working memory", "기억", "부호화", "저장", "인출", "작업기억", "记忆", "编码", "储存", "提取", "工作记忆"],
+    "content": "Memory includes encoding, storage, and retrieval. 한국어: 정보는 부호화되어 저장되고 필요할 때 인출된다. 작업기억은 짧은 시간 동안 정보를 유지하고 조작하는 능력이다. 中文：记忆包括编码、储存和提取，工作记忆负责短暂保持并操作信息。"
+  },
+  {
+    "title": "Emotion and Motivation / 정서와 동기 / 情绪与动机",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["emotion", "motivation", "affect", "drive", "정서", "감정", "동기", "情绪", "动机", "情感"],
+    "content": "Emotion involves subjective feeling, physiological arousal, cognition, and expression. Motivation explains why behavior starts, continues, and changes direction. 한국어: 정서와 동기는 행동 선택과 지속에 큰 영향을 준다. 中文：情绪包含主观体验、生理唤醒和表达，动机解释行为为什么发生和持续。"
+  },
+  {
+    "title": "Developmental Psychology / 발달심리학 / 发展心理学",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["developmental psychology", "child development", "adolescence", "발달심리학", "아동발달", "청소년기", "发展心理学", "儿童发展", "青春期"],
+    "content": "Developmental psychology studies changes across the lifespan, including physical, cognitive, emotional, and social development. 한국어: 발달은 아동기뿐 아니라 청소년기, 성인기, 노년기까지 이어진다. 中文：发展心理学研究个体从婴幼儿到老年的认知、情绪、社会和身体发展。"
+  },
+  {
+    "title": "Social Psychology / 사회심리학 / 社会心理学",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["social psychology", "attitude", "conformity", "prejudice", "사회심리학", "태도", "동조", "편견", "社会心理学", "态度", "从众", "偏见"],
+    "content": "Social psychology studies how people think, feel, and behave in social contexts. 한국어: 태도, 동조, 설득, 편견, 집단행동이 주요 주제다. 中文：社会心理学研究社会情境如何影响人的想法、情绪和行为，包括态度、从众、偏见和群体行为。"
+  },
+  {
+    "title": "Personality Psychology / 성격심리학 / 人格心理学",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["personality", "traits", "big five", "성격", "성격심리학", "빅파이브", "人格", "人格心理学", "大五人格"],
+    "content": "Personality psychology studies relatively stable patterns of thinking, feeling, and behaving. 한국어: 빅파이브는 개방성, 성실성, 외향성, 친화성, 신경성을 포함한다. 中文：人格心理学研究稳定的思维、情绪和行为模式，大五人格包括开放性、尽责性、外向性、宜人性和神经质。"
+  },
+  {
+    "title": "Abnormal Psychology and Mental Health / 이상심리와 정신건강 / 异常心理与心理健康",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["abnormal psychology", "mental health", "anxiety", "depression", "이상심리", "정신건강", "불안", "우울", "异常心理", "心理健康", "焦虑", "抑郁"],
+    "content": "Abnormal psychology studies patterns of emotion, thought, and behavior that cause distress or impairment. 한국어: 정신건강에서는 증상, 기능 손상, 맥락, 치료 접근을 함께 고려한다. 中文：异常心理学研究造成痛苦或功能受损的心理和行为模式，心理健康需要结合症状、功能和情境理解。"
+  },
+  {
+    "title": "Biological Psychology / 생물심리학 / 生物心理学",
+    "subject": "Psychology",
+    "language": "English, Korean, Chinese",
+    "keywords": ["biological psychology", "neuroscience", "brain", "neuron", "생물심리학", "뇌", "뉴런", "신경과학", "生物心理学", "神经科学", "大脑", "神经元"],
+    "content": "Biological psychology connects behavior and mental processes with the brain, nervous system, hormones, and genetics. 한국어: 뉴런, 시냅스, 뇌 영역, 호르몬은 행동 이해에 중요하다. 中文：生物心理学把心理与行为同大脑、神经系统、激素和遗传联系起来。"
+  },
+  {
+    "title": "OpenStax Psychology 2e - Free Psychology Textbook",
+    "subject": "Psychology Material",
+    "language": "English",
+    "keywords": ["OpenStax Psychology 2e", "free psychology textbook", "psychology textbook", "심리학 무료 교재", "心理学免费教材"],
+    "content": "OpenStax Psychology 2e is a free, openly licensed introductory psychology textbook. It covers research methods, biopsychology, sensation, perception, learning, memory, development, personality, social psychology, psychological disorders, and therapy. 한국어: 영어 심리학 입문 교재로 활용할 수 있다. 中文：适合作为英文心理学入门免费教材。",
+    "source_url": "https://openstax.org/details/books/psychology-2e"
+  },
+  {
+    "title": "Noba Project - Free Psychology Modules",
+    "subject": "Psychology Material",
+    "language": "English",
+    "keywords": ["Noba Project", "Noba psychology", "free psychology modules", "심리학 무료 자료", "心理学免费模块"],
+    "content": "Noba Project provides free psychology learning modules. The full Introduction to Psychology collection includes psychology as science, biological bases of behavior, perception, development, cognition, learning, memory, social psychology, personality, emotion, motivation, and mental health. 中文：适合查找英文心理学模块化材料。",
+    "source_url": "https://nobaproject.com/textbooks/introduction-to-psychology-the-full-noba-collection"
+  },
+  {
+    "title": "K-MOOC and KOCW - Korean Free Psychology Learning Search",
+    "subject": "Psychology Material",
+    "language": "Korean",
+    "keywords": ["K-MOOC 심리학", "KOCW 심리학", "심리학 강의", "상담심리", "발달심리", "사회심리", "인지심리", "한국어 심리학"],
+    "content": "K-MOOC와 KOCW에서 심리학, 상담심리, 발달심리, 사회심리, 인지심리, 이상심리 키워드로 한국어 공개강의를 찾을 수 있다. 中文：适合查找韩语心理学免费课程材料。",
+    "source_url": "https://www.kmooc.kr/"
+  },
+  {
+    "title": "Chinese Psychology Learning Search - Smart Education and XuetangX",
+    "subject": "Psychology Material",
+    "language": "Chinese",
+    "keywords": ["心理学课程", "普通心理学", "发展心理学", "社会心理学", "认知心理学", "心理健康", "中文心理学", "学堂在线", "国家智慧教育平台"],
+    "content": "国家智慧教育公共服务平台和学堂在线可用于查找中文普通心理学、发展心理学、社会心理学、认知心理学和心理健康课程。한국어: 중국어 심리학 학습 자료 검색에 활용할 수 있다.",
+    "source_url": "https://www.smartedu.cn/"
   }
 ]

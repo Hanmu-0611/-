@@ -143,6 +143,21 @@ def save_openrouter_settings(api_key: str) -> bool:
 
 `multilingual_pdf_study_helper/data/knowledge_base_sample.json`은 앱이 PDF 내용과 비교할 기본 샘플 지식베이스입니다. `knowledge_base.py`가 이 파일을 읽어서 PDF와 관련 있는 항목을 자동 검색합니다.
 
+현재 기본 지식베이스에는 수학/컴퓨터 기초 외에도 AI 학과와 심리학과 학습에 쓸 수 있는 무료 자료 색인이 들어 있습니다.
+
+- AI / 인공지능 / 人工智能
+- Machine Learning / 머신러닝 / 机器学习
+- Neural Networks / 신경망 / 神经网络
+- Large Language Models / 대규모 언어모델 / 大语言模型
+- Responsible AI / 책임 있는 AI / 负责任人工智能
+- Psychology / 심리학 / 心理学
+- Cognitive Psychology / 인지심리학 / 认知心理学
+- Social Psychology / 사회심리학 / 社会心理学
+- Developmental Psychology / 발달심리학 / 发展心理学
+- Mental Health / 정신건강 / 心理健康
+
+또한 한국어, 영어, 중국어 무료 학습 자료를 찾을 수 있도록 K-MOOC/KOCW, Google Machine Learning Crash Course, Elements of AI, OpenStax Psychology, Noba Project, 学堂在线, 国家智慧教育公共服务平台 같은 자료 링크도 지식베이스 항목에 포함했습니다.
+
 직접 만든 지식베이스로 바꾸고 싶다면 같은 JSON 구조로 항목을 수정하면 됩니다.
 
 ## 주요 파일

@@ -55,11 +55,13 @@ def normalize_reference(value: Any) -> dict:
         return {
             "title": "참고 자료",
             "content": safe_string(value),
+            "source_url": "",
         }
 
     return {
         "title": safe_string(reference.get("title")) or "참고 자료",
         "content": safe_string(reference.get("content")),
+        "source_url": safe_string(reference.get("source_url")),
     }
 
 
