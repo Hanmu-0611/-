@@ -1,0 +1,170 @@
+[
+  {
+    "english": "artificial intelligence",
+    "korean": "인공지능",
+    "chinese": "人工智能",
+    "subject": "AI",
+    "aliases": ["AI", "智能系统", "지능형 시스템"],
+    "explanation": "Systems that perform tasks related to reasoning, perception, language, planning, or decision making. / 추론, 인식, 언어, 계획, 의사결정과 관련된 기능을 수행하는 시스템. / 执行推理、感知、语言、规划或决策任务的系统。"
+  },
+  {
+    "english": "machine learning",
+    "korean": "머신러닝 / 기계학습",
+    "chinese": "机器学习",
+    "subject": "AI",
+    "aliases": ["ML", "training data", "학습 데이터", "训练数据"],
+    "explanation": "A method where models learn patterns from data. / 데이터에서 패턴을 학습하는 방법. / 模型从数据中学习模式的方法。"
+  },
+  {
+    "english": "supervised learning",
+    "korean": "지도학습",
+    "chinese": "监督学习",
+    "subject": "AI",
+    "aliases": ["labeled data", "label", "라벨", "标注数据"],
+    "explanation": "Learning from input-output examples with labels. / 정답 라벨이 있는 데이터로 학습하는 방식. / 使用带标签数据学习输入与输出关系。"
+  },
+  {
+    "english": "unsupervised learning",
+    "korean": "비지도학습",
+    "chinese": "无监督学习",
+    "subject": "AI",
+    "aliases": ["clustering", "군집화", "聚类"],
+    "explanation": "Finding structure in data without labels. / 라벨 없이 데이터 구조를 찾는 방식. / 在没有标签的情况下发现数据结构。"
+  },
+  {
+    "english": "reinforcement learning",
+    "korean": "강화학습",
+    "chinese": "强化学习",
+    "subject": "AI",
+    "aliases": ["reward", "policy", "agent", "보상", "정책", "奖励", "策略"],
+    "explanation": "An agent learns actions through rewards from an environment. / 에이전트가 환경의 보상을 통해 행동을 학습한다. / 智能体通过环境奖励学习行动策略。"
+  },
+  {
+    "english": "neural network",
+    "korean": "신경망",
+    "chinese": "神经网络",
+    "subject": "AI",
+    "aliases": ["deep learning", "딥러닝", "深度学习"],
+    "explanation": "A layered model that learns transformations from inputs to outputs. / 입력을 출력으로 변환하는 여러 층의 모델. / 通过多层结构学习输入到输出映射的模型。"
+  },
+  {
+    "english": "large language model",
+    "korean": "대규모 언어모델",
+    "chinese": "大语言模型",
+    "subject": "AI",
+    "aliases": ["LLM", "language model", "언어모델", "语言模型"],
+    "explanation": "A model trained on large text corpora to generate and understand language. / 대규모 텍스트로 학습한 언어 이해·생성 모델. / 基于大量文本训练的语言理解与生成模型。"
+  },
+  {
+    "english": "natural language processing",
+    "korean": "자연어처리",
+    "chinese": "自然语言处理",
+    "subject": "AI",
+    "aliases": ["NLP", "text classification", "sentiment analysis", "文本分类", "情感分析"],
+    "explanation": "Computer processing of human language. / 사람이 쓰는 언어를 컴퓨터가 처리하는 분야. / 计算机处理人类语言的领域。"
+  },
+  {
+    "english": "overfitting",
+    "korean": "과적합",
+    "chinese": "过拟合",
+    "subject": "AI",
+    "aliases": ["generalization", "일반화", "泛化"],
+    "explanation": "When a model memorizes training data and performs poorly on new data. / 훈련 데이터를 외워 새 데이터에 약해지는 현상. / 模型记住训练数据而不能很好泛化。"
+  },
+  {
+    "english": "model evaluation",
+    "korean": "모델 평가",
+    "chinese": "模型评估",
+    "subject": "AI",
+    "aliases": ["accuracy", "precision", "recall", "F1", "정확도", "정밀도", "재현율", "准确率", "精确率", "召回率"],
+    "explanation": "Checking model performance with metrics. / 지표로 모델 성능을 확인하는 과정. / 使用指标评估模型表现。"
+  },
+  {
+    "english": "psychology",
+    "korean": "심리학",
+    "chinese": "心理学",
+    "subject": "Psychology",
+    "aliases": ["behavior", "mental process", "행동", "마음", "行为", "心理过程"],
+    "explanation": "Scientific study of behavior and mental processes. / 행동과 마음의 과정을 과학적으로 연구하는 학문. / 研究行为和心理过程的科学。"
+  },
+  {
+    "english": "research methods",
+    "korean": "연구방법",
+    "chinese": "研究方法",
+    "subject": "Psychology",
+    "aliases": ["experiment", "correlation", "variable", "실험", "상관", "변인", "实验", "相关", "变量"],
+    "explanation": "Ways to collect evidence and test psychological questions. / 심리 현상을 검증하기 위한 증거 수집 방법. / 收集证据并检验心理问题的方法。"
+  },
+  {
+    "english": "cognitive psychology",
+    "korean": "인지심리학",
+    "chinese": "认知心理学",
+    "subject": "Psychology",
+    "aliases": ["attention", "thinking", "주의", "사고", "注意", "思维"],
+    "explanation": "Study of information processing such as attention, memory, and thinking. / 주의, 기억, 사고 같은 정보처리 연구. / 研究注意、记忆和思维等信息加工。"
+  },
+  {
+    "english": "memory",
+    "korean": "기억",
+    "chinese": "记忆",
+    "subject": "Psychology",
+    "aliases": ["encoding", "storage", "retrieval", "부호화", "저장", "인출", "编码", "储存", "提取"],
+    "explanation": "Encoding, storing, and retrieving information. / 정보를 부호화하고 저장한 뒤 인출하는 과정. / 对信息进行编码、储存和提取的过程。"
+  },
+  {
+    "english": "working memory",
+    "korean": "작업기억",
+    "chinese": "工作记忆",
+    "subject": "Psychology",
+    "aliases": ["short-term memory", "단기기억", "短时记忆"],
+    "explanation": "Temporarily holding and manipulating information. / 정보를 잠시 유지하고 조작하는 능력. / 短暂保持并操作信息的能力。"
+  },
+  {
+    "english": "classical conditioning",
+    "korean": "고전적 조건형성",
+    "chinese": "经典条件作用",
+    "subject": "Psychology",
+    "aliases": ["conditioning", "Pavlov", "조건형성", "条件作用"],
+    "explanation": "Learning through association between stimuli. / 자극 간 연합을 통한 학습. / 通过刺激之间的联结进行学习。"
+  },
+  {
+    "english": "operant conditioning",
+    "korean": "조작적 조건형성",
+    "chinese": "操作性条件作用",
+    "subject": "Psychology",
+    "aliases": ["reinforcement", "punishment", "강화", "처벌", "强化", "惩罚"],
+    "explanation": "Learning through consequences of behavior. / 행동의 결과를 통해 학습하는 과정. / 通过行为结果进行学习。"
+  },
+  {
+    "english": "emotion",
+    "korean": "정서 / 감정",
+    "chinese": "情绪",
+    "subject": "Psychology",
+    "aliases": ["motivation", "affect", "동기", "情感", "动机"],
+    "explanation": "Feeling states involving experience, arousal, cognition, and expression. / 경험, 각성, 인지, 표현을 포함한 감정 상태. / 包含体验、唤醒、认知和表达的状态。"
+  },
+  {
+    "english": "developmental psychology",
+    "korean": "발달심리학",
+    "chinese": "发展心理学",
+    "subject": "Psychology",
+    "aliases": ["child development", "adolescence", "아동발달", "청소년기", "儿童发展", "青春期"],
+    "explanation": "Study of change across the lifespan. / 전 생애에 걸친 변화 연구. / 研究个体一生中的发展变化。"
+  },
+  {
+    "english": "social psychology",
+    "korean": "사회심리학",
+    "chinese": "社会心理学",
+    "subject": "Psychology",
+    "aliases": ["attitude", "conformity", "prejudice", "태도", "동조", "편견", "态度", "从众", "偏见"],
+    "explanation": "Study of how social contexts influence thoughts, feelings, and behavior. / 사회적 맥락이 생각·정서·행동에 미치는 영향 연구. / 研究社会情境如何影响想法、情绪和行为。"
+  },
+  {
+    "english": "mental health",
+    "korean": "정신건강",
+    "chinese": "心理健康",
+    "subject": "Psychology",
+    "aliases": ["abnormal psychology", "anxiety", "depression", "이상심리", "불안", "우울", "异常心理", "焦虑", "抑郁"],
+    "explanation": "Well-being and distress related to emotion, thought, and behavior. / 정서·사고·행동과 관련된 건강과 어려움. / 与情绪、思维和行为相关的健康与困扰。"
+  }
+]

@@ -818,6 +818,9 @@ def show_local_processing_result(ui_language: str, result: dict) -> None:
     st.subheader(t(ui_language, "knowledge_status"))
     search_count = result.get("knowledge_search_count", 0)
     st.write(f"{t(ui_language, 'knowledge_count')}: {search_count}")
+    dictionary_count = result.get("local_dictionary_count", 0)
+    if dictionary_count:
+        st.write(f"Local fast dictionary terms / 로컬 빠른 사전 용어 / 本地快速词典术语: {dictionary_count}")
 
 
 def show_analysis_result(ui_language: str, result: dict) -> None:

@@ -23,11 +23,42 @@ PDF 文本提取
 PDF 出处知识库生成
 自动搜索知识库
 手动搜索知识库
+本地快速术语翻译
+英文 / 韩文 / 中文术语词典
 Markdown / JSON 下载
 中文对照整理提示
 ```
 
 这种模式不会调用在线 AI，所以不需要付费，也不需要输入 Key。
+
+### 0 API 快速翻译
+
+没有 API Key 时，程序会使用内置的本地术语词典快速翻译。它不会联网，所以速度很快。
+
+当前内置词典文件：
+
+```text
+multilingual_pdf_study_helper/data/term_dictionary.json
+```
+
+它会从 PDF 文本中自动匹配 AI、心理学、数学、计算机等专业术语，并生成：
+
+```text
+English
+Korean
+Chinese
+Explanation
+本地翻译预览
+```
+
+也就是说，即使不输入 API Key，用户也能看到 PDF 中专业词汇的中韩英对照翻译。
+如果 PDF 里出现 `machine learning`，本地模式会快速标注成类似：
+
+```text
+machine learning [머신러닝 / 기계학습 / 机器学习]
+```
+
+这个翻译不需要 OpenRouter，不需要 Ollama，也不需要网络。
 
 ### 2. 在网页内部手动输入 API Key
 
@@ -170,6 +201,7 @@ multilingual_pdf_study_helper/
   pdf_extractor.py       PDF 텍스트 추출
   knowledge_base.py      지식베이스 검색
   data/knowledge_base_sample.json
+  data/term_dictionary.json
   .env.example           환경변수 예시
 ```
 

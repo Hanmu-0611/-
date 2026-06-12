@@ -1,5 +1,11 @@
 from ai_client import MAX_TEXT_LENGTH, call_ollama_ai, call_openrouter_ai
 from knowledge_base import search_knowledge_base
+from local_translator import (
+    build_fast_translation_lines,
+    build_translated_preview,
+    match_terms,
+    term_to_glossary_item,
+)
 from pdf_extractor import extract_pdf_document
 from safe_utils import normalize_result, safe_string
 
@@ -88,21 +94,28 @@ def get_local_text(target_language: str) -> dict[str, str]:
 def build_local_analysis_result(
     pdf_text: str,
     knowledge_results: list[dict],
+    matched_terms: list[dict],
     target_language: str,
     term_mode: str,
 ) -> dict:
     """Create a useful result without sending text to any AI service."""
     labels = get_local_text(target_language)
     preview = safe_string(pdf_text)[:1200]
+    translation_lines = build_fast_translation_lines(matched_terms)
+    translated_preview = build_translated_preview(pdf_text, matched_terms)
     key_points = []
+    if matched_terms:
+        key_points.append(
+            "로컬 빠른 번역 사전에서 PDF 관련 전문용어를 찾았습니다. / 已用本地快速翻译词典匹配到 PDF 相关专业术语。"
+        )
     if knowledge_results:
         key_points.append(labels["matched"])
     key_points.append(labels["local"])
 
     return normalize_result(
         {
-            "title": labels["title"],
-            "concepts": [
+            "title": f"{labels['title']} - 빠른 로컬 번역 / 快速本地翻译",
+            "concepts": translation_lines[:8] or [
                 safe_string(item.get("title"))
                 for item in knowledge_results
                 if isinstance(item, dict) and safe_string(item.get("title"))
@@ -120,11 +133,16 @@ def build_local_analysis_result(
             ],
             "details": (
                 f"{labels['details']}\n"
+                "빠른 로컬 번역은 API 없이 내장 사전으로 전문용어를 즉시 매칭합니다.\n"
+                "中文：快速本地翻译不需要 API，会用内置词典立即匹配专业术语。\n\n"
+                f"[빠른 번역 결과 / 快速翻译结果]\n"
+                f"{chr(10).join(translation_lines) if translation_lines else '매칭된 사전 용어가 없습니다. / 没有匹配到词典术语。'}\n\n"
+                f"[로컬 번역 미리보기 / 本地翻译预览]\n{translated_preview}\n\n"
                 f"target_language: {safe_string(target_language)}\n"
                 f"term_mode: {safe_string(term_mode)}\n\n"
                 f"[{labels['preview']}]\n{preview}"
             ),
-            "glossary": [],
+            "glossary": [term_to_glossary_item(term) for term in matched_terms],
             "quiz": [],
         }
     )
@@ -165,6 +183,11 @@ def analyze_pdf(
     except Exception:
         knowledge_results = []
 
+    try:
+        matched_terms = match_terms(pdf_text, limit=30)
+    except Exception:
+        matched_terms = []
+
     local_context = {
         "pdf_text_preview": safe_string(pdf_text)[:PDF_PREVIEW_LENGTH],
         "pdf_text_length": len(safe_string(pdf_text)),
@@ -173,6 +196,8 @@ def analyze_pdf(
         "pdf_pages": pdf_document.get("pages", []),
         "source_knowledge_entries": pdf_document.get("knowledge_entries", []),
         "source_knowledge_count": len(pdf_document.get("knowledge_entries", [])),
+        "local_dictionary_terms": matched_terms,
+        "local_dictionary_count": len(matched_terms),
         "ocr": pdf_document.get("ocr", {}),
     }
 
@@ -184,6 +209,7 @@ def analyze_pdf(
         analysis_result = build_local_analysis_result(
             pdf_text=pdf_text,
             knowledge_results=knowledge_results,
+            matched_terms=matched_terms,
             target_language=target_language,
             term_mode=term_mode,
         )
@@ -225,6 +251,7 @@ def analyze_pdf(
         normalized_result = build_local_analysis_result(
             pdf_text=pdf_text,
             knowledge_results=knowledge_results,
+            matched_terms=matched_terms,
             target_language=target_language,
             term_mode=term_mode,
         )
