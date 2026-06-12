@@ -115,6 +115,12 @@ TEXT = {
         "title": "다국어 PDF 지식베이스 학습 도우미 AI",
         "intro": "외국어 강의자료 PDF를 업로드하면 PDF 내용을 추출하고, 지식베이스를 참고해 핵심 개념, 공식, 상세 설명, 복습 문제, 다국어 용어 사전을 정리합니다.",
         "upload_pdf": "PDF 파일 업로드",
+        "batch_upload_caption": "여러 PDF를 한 번에 업로드하면 순서대로 번역하고 정리합니다.",
+        "batch_summary": "배치 번역/정리 요약",
+        "batch_progress": "처리 중",
+        "batch_download_md": "배치 정리 Markdown 다운로드",
+        "batch_download_json": "배치 정리 JSON 다운로드",
+        "batch_file_result": "파일별 결과",
         "target_language": "설명 언어 선택",
         "term_mode": "전공 용어 처리 방식",
         "translation_notice": "번역/정리 결과에는 기본적으로 중국어 설명이 함께 포함됩니다.",
@@ -213,6 +219,12 @@ TEXT = {
         "title": "Multilingual PDF Knowledge Base Study Assistant AI",
         "intro": "Upload a foreign-language lecture PDF. The app extracts the text, checks the knowledge base, and organizes key concepts, formulas, explanations, review questions, and a multilingual glossary.",
         "upload_pdf": "Upload PDF file",
+        "batch_upload_caption": "Upload multiple PDFs at once to translate and organize them in order.",
+        "batch_summary": "Batch translation / organization summary",
+        "batch_progress": "Processing",
+        "batch_download_md": "Download batch summary Markdown",
+        "batch_download_json": "Download batch summary JSON",
+        "batch_file_result": "Result by file",
         "target_language": "Explanation language",
         "term_mode": "Technical term handling",
         "translation_notice": "Chinese explanations are included in translated/organized results by default.",
@@ -311,6 +323,12 @@ TEXT = {
         "title": "多语言 PDF 知识库学习助手 AI",
         "intro": "上传外语课程 PDF 后，应用会提取文本，参考知识库整理核心概念、公式、详细说明、复习题和多语言术语表。",
         "upload_pdf": "上传 PDF 文件",
+        "batch_upload_caption": "可以一次上传多个 PDF，程序会按顺序批量翻译和整理。",
+        "batch_summary": "批量翻译/整理汇总",
+        "batch_progress": "正在处理",
+        "batch_download_md": "下载批量整理 Markdown",
+        "batch_download_json": "下载批量整理 JSON",
+        "batch_file_result": "按文件查看结果",
         "target_language": "说明语言",
         "term_mode": "专业术语处理方式",
         "translation_notice": "翻译和整理结果会默认包含中文说明。",
@@ -732,7 +750,7 @@ def show_knowledge_item_body(ui_language: str, item: dict) -> None:
         st.markdown(f"[Material link / 자료 링크 / 资料链接]({source_url})")
 
 
-def show_auto_knowledge_search(ui_language: str, result: dict) -> None:
+def show_auto_knowledge_search(ui_language: str, result: dict, key_prefix: str = "single") -> None:
     st.subheader(t(ui_language, "auto_knowledge"))
 
     auto_results = safe_list(result.get("auto_knowledge_results"))
@@ -750,6 +768,7 @@ def show_auto_knowledge_search(ui_language: str, result: dict) -> None:
     manual_query = st.text_input(
         t(ui_language, "manual_search"),
         placeholder=t(ui_language, "manual_placeholder"),
+        key=f"{key_prefix}_manual_search",
     )
     if manual_query:
         manual_results = search_knowledge_base(manual_query, top_k=8)
@@ -780,7 +799,7 @@ def build_source_markdown(entries) -> str:
     return "\n".join(lines).strip()
 
 
-def show_pdf_source_inventory(ui_language: str, result: dict) -> None:
+def show_pdf_source_inventory(ui_language: str, result: dict, key_prefix: str = "single") -> None:
     st.subheader(t(ui_language, "source_inventory"))
 
     entries = safe_list(result.get("source_knowledge_entries"))
@@ -820,6 +839,7 @@ def show_pdf_source_inventory(ui_language: str, result: dict) -> None:
     keyword = st.text_input(
         t(ui_language, "source_search"),
         placeholder=t(ui_language, "source_placeholder"),
+        key=f"{key_prefix}_source_search",
     )
     keyword_lower = safe_string(keyword).lower().strip()
     filtered_entries = []
@@ -842,12 +862,14 @@ def show_pdf_source_inventory(ui_language: str, result: dict) -> None:
         data=build_source_markdown(entries),
         file_name="pdf_source_knowledge_base.md",
         mime="text/markdown",
+        key=f"{key_prefix}_source_md",
     )
     st.download_button(
         t(ui_language, "download_json"),
         data=json.dumps(entries, ensure_ascii=False, indent=2),
         file_name="pdf_source_knowledge_base.json",
         mime="application/json",
+        key=f"{key_prefix}_source_json",
     )
 
 
@@ -905,7 +927,7 @@ def show_local_processing_result(ui_language: str, result: dict) -> None:
         st.write(f"Local fast dictionary terms / 로컬 빠른 사전 용어 / 本地快速词典术语: {dictionary_count}")
 
 
-def show_analysis_result(ui_language: str, result: dict) -> None:
+def show_analysis_result(ui_language: str, result: dict, key_prefix: str = "single") -> None:
     safe_result = normalize_result(result)
 
     if safe_result.get("warning"):
@@ -913,8 +935,8 @@ def show_analysis_result(ui_language: str, result: dict) -> None:
 
     st.header(safe_result.get("title") or t(ui_language, "result"))
     show_local_processing_result(ui_language, safe_result)
-    show_auto_knowledge_search(ui_language, safe_result)
-    show_pdf_source_inventory(ui_language, safe_result)
+    show_auto_knowledge_search(ui_language, safe_result, key_prefix=key_prefix)
+    show_pdf_source_inventory(ui_language, safe_result, key_prefix=key_prefix)
 
     st.markdown(
         """
@@ -934,6 +956,123 @@ def show_analysis_result(ui_language: str, result: dict) -> None:
 
     show_glossary(ui_language, safe_result.get("glossary", []))
     show_quiz(ui_language, safe_result.get("quiz", []))
+
+
+def build_result_markdown(file_name: str, result: dict) -> str:
+    safe_result = normalize_result(result)
+    lines = [
+        f"# {safe_string(file_name) or safe_string(safe_result.get('title')) or 'PDF'}",
+        "",
+        f"- Title: {safe_string(safe_result.get('title'))}",
+        f"- AI provider: {safe_string(safe_result.get('ai_provider_label'))}",
+        f"- Extracted text length: {safe_result.get('pdf_text_length', 0)}",
+        f"- Knowledge items: {safe_result.get('knowledge_search_count', 0)}",
+        "",
+    ]
+
+    if safe_result.get("warning"):
+        lines.extend(["## Warning", safe_string(safe_result.get("warning")), ""])
+    if safe_result.get("error"):
+        lines.extend(["## Error", safe_string(safe_result.get("error")), ""])
+
+    sections = [
+        ("Key Concepts", safe_result.get("concepts")),
+        ("Formulas / Definitions", safe_result.get("formulas")),
+        ("Exam Key Points", safe_result.get("key_points")),
+    ]
+    for title, value in sections:
+        lines.extend([f"## {title}", ""])
+        items = [safe_string(item) for item in safe_list(value) if safe_string(item)]
+        if items:
+            lines.extend([f"- {item}" for item in items])
+        else:
+            lines.append("- No content.")
+        lines.append("")
+
+    lines.extend(["## Detailed Explanation", "", safe_string(safe_result.get("details")), ""])
+
+    glossary = safe_list(safe_result.get("glossary"))
+    if glossary:
+        lines.extend(["## Multilingual Glossary", ""])
+        for item in glossary:
+            if isinstance(item, dict):
+                lines.append(
+                    "- "
+                    f"{safe_string(item.get('english'))} / "
+                    f"{safe_string(item.get('korean'))} / "
+                    f"{safe_string(item.get('chinese'))}: "
+                    f"{safe_string(item.get('explanation'))}"
+                )
+        lines.append("")
+
+    quiz_items = safe_list(safe_result.get("quiz"))
+    if quiz_items:
+        lines.extend(["## Review Questions", ""])
+        for index, item in enumerate(quiz_items, start=1):
+            if not isinstance(item, dict):
+                lines.append(f"{index}. {safe_string(item)}")
+                continue
+            lines.extend(
+                [
+                    f"{index}. {safe_string(item.get('question'))}",
+                    f"   - Answer: {safe_string(item.get('answer'))}",
+                    f"   - Explanation: {safe_string(item.get('explanation'))}",
+                ]
+            )
+        lines.append("")
+
+    return "\n".join(lines).strip()
+
+
+def build_batch_markdown(batch_results: list[dict]) -> str:
+    lines = ["# Batch PDF Translation And Study Summary", ""]
+    for index, item in enumerate(batch_results, start=1):
+        file_name = safe_string(item.get("file_name")) or f"PDF {index}"
+        result = item.get("result") if isinstance(item.get("result"), dict) else {}
+        lines.extend(
+            [
+                f"## {index}. {file_name}",
+                "",
+                build_result_markdown(file_name, result),
+                "",
+                "---",
+                "",
+            ]
+        )
+    return "\n".join(lines).strip()
+
+
+def show_batch_downloads(ui_language: str, batch_results: list[dict]) -> None:
+    st.subheader(t(ui_language, "batch_summary"))
+    rows = []
+    for item in batch_results:
+        result = normalize_result(item.get("result") if isinstance(item.get("result"), dict) else {})
+        rows.append(
+            {
+                "File": safe_string(item.get("file_name")),
+                "Title": safe_string(result.get("title")),
+                "Provider": safe_string(result.get("ai_provider_label")),
+                "Text length": result.get("pdf_text_length", 0),
+                "Knowledge items": result.get("knowledge_search_count", 0),
+                "Error": safe_string(result.get("error")),
+            }
+        )
+    st.table(rows)
+
+    st.download_button(
+        t(ui_language, "batch_download_md"),
+        data=build_batch_markdown(batch_results),
+        file_name="batch_pdf_translation_summary.md",
+        mime="text/markdown",
+        key="batch_download_md",
+    )
+    st.download_button(
+        t(ui_language, "batch_download_json"),
+        data=json.dumps(batch_results, ensure_ascii=False, indent=2),
+        file_name="batch_pdf_translation_summary.json",
+        mime="application/json",
+        key="batch_download_json",
+    )
 
 
 def show_ai_settings_sidebar(ui_language: str) -> tuple[str, str]:
@@ -1092,7 +1231,12 @@ def main() -> None:
     st.title(t(ui_language, "title"))
     st.write(t(ui_language, "intro"))
 
-    uploaded_file = st.file_uploader(t(ui_language, "upload_pdf"), type=["pdf"])
+    uploaded_files = st.file_uploader(
+        t(ui_language, "upload_pdf"),
+        type=["pdf"],
+        accept_multiple_files=True,
+    )
+    st.caption(t(ui_language, "batch_upload_caption"))
 
     target_language = st.selectbox(
         t(ui_language, "target_language"),
@@ -1109,23 +1253,8 @@ def main() -> None:
     )
 
     if st.button(t(ui_language, "start"), type="primary"):
-        if uploaded_file is None:
+        if not uploaded_files:
             st.warning(t(ui_language, "upload_first"))
-            return
-
-        uploaded_file_size = get_uploaded_file_size(uploaded_file)
-        if uploaded_file_size > MAX_UPLOAD_SIZE_BYTES:
-            st.error(get_too_large_pdf_error(ui_language, uploaded_file_size))
-            return
-        if uploaded_file_size > LARGE_PDF_WARNING_BYTES:
-            st.warning(get_large_pdf_warning(ui_language, uploaded_file_size))
-
-        if not uploaded_file_is_pdf(uploaded_file):
-            st.error(t(ui_language, "invalid_pdf"))
-            return
-
-        file_path = save_uploaded_file(uploaded_file, ui_language)
-        if file_path is None:
             return
 
         if ai_provider == "local":
@@ -1137,27 +1266,71 @@ def main() -> None:
         else:
             spinner_text = t(ui_language, "spinner_openrouter")
 
+        batch_results = []
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        total_files = len(uploaded_files)
+
         with st.spinner(spinner_text):
-            try:
-                result = analyze_pdf(
-                    file_path=str(file_path),
-                    target_language=target_language,
-                    term_mode=term_mode,
-                    ai_provider=ai_provider,
-                    ollama_model=ollama_model,
+            for index, uploaded_file in enumerate(uploaded_files, start=1):
+                file_name = safe_string(getattr(uploaded_file, "name", "")) or f"PDF {index}"
+                status_text.write(f"{t(ui_language, 'batch_progress')}: {index}/{total_files} - {file_name}")
+
+                uploaded_file_size = get_uploaded_file_size(uploaded_file)
+                if uploaded_file_size > MAX_UPLOAD_SIZE_BYTES:
+                    result = {
+                        "error": get_too_large_pdf_error(ui_language, uploaded_file_size),
+                        "details": t(ui_language, "try_again"),
+                    }
+                elif not uploaded_file_is_pdf(uploaded_file):
+                    result = {
+                        "error": t(ui_language, "invalid_pdf"),
+                        "details": t(ui_language, "try_again"),
+                    }
+                else:
+                    if uploaded_file_size > LARGE_PDF_WARNING_BYTES:
+                        st.warning(f"{file_name}: {get_large_pdf_warning(ui_language, uploaded_file_size)}")
+
+                    file_path = save_uploaded_file(uploaded_file, ui_language)
+                    if file_path is None:
+                        result = {
+                            "error": t(ui_language, "upload_error"),
+                            "details": t(ui_language, "try_again"),
+                        }
+                    else:
+                        try:
+                            result = analyze_pdf(
+                                file_path=str(file_path),
+                                target_language=target_language,
+                                term_mode=term_mode,
+                                ai_provider=ai_provider,
+                                ollama_model=ollama_model,
+                            )
+                        except Exception as error:
+                            result = {
+                                "error": f"{t(ui_language, 'unexpected_error')}: {error}",
+                                "details": t(ui_language, "try_again"),
+                            }
+
+                safe_result = normalize_result(result)
+                batch_results.append(
+                    {
+                        "file_name": file_name,
+                        "result": safe_result,
+                    }
                 )
-            except Exception as error:
-                result = {
-                    "error": f"{t(ui_language, 'unexpected_error')}: {error}",
-                    "details": t(ui_language, "try_again"),
-                }
+                progress_bar.progress(index / total_files)
 
-        safe_result = normalize_result(result)
+        show_batch_downloads(ui_language, batch_results)
 
-        if safe_result.get("error"):
-            st.error(safe_result.get("error", t(ui_language, "api_required_for_ai")))
-
-        show_analysis_result(ui_language, safe_result)
+        st.subheader(t(ui_language, "batch_file_result"))
+        for index, item in enumerate(batch_results, start=1):
+            file_name = safe_string(item.get("file_name")) or f"PDF {index}"
+            safe_result = normalize_result(item.get("result"))
+            with st.expander(f"{index}. {file_name}", expanded=(len(batch_results) == 1)):
+                if safe_result.get("error"):
+                    st.error(safe_result.get("error", t(ui_language, "api_required_for_ai")))
+                show_analysis_result(ui_language, safe_result, key_prefix=f"batch_{index}")
 
 
 if __name__ == "__main__":
