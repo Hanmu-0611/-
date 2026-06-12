@@ -38,23 +38,16 @@ AI 模式选择：
 OpenRouter 온라인 AI 사용
 
 打开：
-API Key / 모델 설정
+API Key 设置
 
 输入：
 OpenRouter API Key
-OpenRouter 모델
 
 点击：
 API 설정 저장
 ```
 
-可以使用的免费模型示例：
-
-```text
-qwen/qwen3-next-80b-a3b-instruct:free
-```
-
-如果老师或平台提供了其他模型名，也可以手动填入 `OpenRouter 모델` 输入框。
+模型会由程序自动选择，普通用户不需要知道或填写模型名。
 
 ## 실행 방법
 
@@ -88,9 +81,11 @@ api key가 입력이 잘 되었더라도 OpenRouter 연결 테스트에서 처�
 
 ```text
 OPENROUTER_API_KEY=여기에_API_KEY_입력
-OPENROUTER_MODEL=여기에_모델명_입력
+OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
 OLLAMA_MODEL=qwen2.5:7b
 ```
+
+普通用户只需要填写 `OPENROUTER_API_KEY`。`OPENROUTER_MODEL` 是程序内部默认模型，不需要修改。
 
 API 키가 없으면 `OPENROUTER_API_KEY=`처럼 비워두면 됩니다. 이 경우 OpenRouter 연결 테스트와 OpenRouter AI 분석은 실패 메시지를 보여주지만, 로컬 PDF 분석 기능은 계속 사용할 수 있습니다.
 
@@ -99,27 +94,24 @@ API 키가 없으면 `OPENROUTER_API_KEY=`처럼 비워두면 됩니다. 이 경
 网页左侧 API 输入框代码在 `multilingual_pdf_study_helper/app.py` 的 `show_ai_settings_sidebar()` 函数中。
 
 ```python
-with st.sidebar.expander("API Key / 모델 설정"):
+with st.sidebar.expander("API Key 设置"):
     api_key_input = st.text_input(
         "OpenRouter API Key",
         type="password",
         placeholder="sk-or-...",
     )
-    model_input = st.text_input(
-        "OpenRouter 모델",
-        value=model_name,
-    )
     if st.button("API 설정 저장"):
         key_to_save = api_key_input.strip() or current_key
-        if save_openrouter_settings(key_to_save, model_input):
+        if save_openrouter_settings(key_to_save):
             st.sidebar.success("저장했습니다. 다시 분석을 실행해주세요.")
 ```
 
-保存 API Key 的代码在 `save_openrouter_settings()` 函数中。它会把网页里输入的 Key 和模型名保存到本地 `.env` 文件。
+保存 API Key 的代码在 `save_openrouter_settings()` 函数中。它会把网页里输入的 Key 保存到本地 `.env` 文件，模型名由程序自动写入默认值。
 
 ```python
-def save_openrouter_settings(api_key: str, model_name: str) -> bool:
+def save_openrouter_settings(api_key: str) -> bool:
     normalized_key = normalize_openrouter_api_key(api_key)
+    model_name = "qwen/qwen3-next-80b-a3b-instruct:free"
 
     ENV_FILE.write_text(
         "\n".join(

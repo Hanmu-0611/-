@@ -131,20 +131,17 @@ TEXT = {
         "ollama_hint": "Ollama 앱을 설치/실행한 뒤 모델을 내려받아야 합니다.",
         "ollama_pull_hint": "예: ollama pull qwen2.5:7b 실행 후 사용합니다.",
         "openrouter_status": "OpenRouter 상태",
-        "current_model": "현재 AI 모델",
         "api_key_set": "API Key가 설정되어 있습니다.",
         "api_key_invalid": "저장된 API Key 형식이 OpenRouter 형식이 아닙니다.",
         "api_key_missing": "API Key가 없어 AI 요약은 건너뛰고 로컬 분석만 사용합니다.",
-        "api_settings": "API Key / 모델 설정",
-        "openrouter_model": "OpenRouter 모델",
+        "api_settings": "API Key 설정",
         "save_api_settings": "API 설정 저장",
         "api_key_hint": "OpenRouter API Key는 보통 sk-or-v1- 로 시작합니다. 다시 확인해주세요.",
-        "default_model_caption": "OPENROUTER_MODEL이 비어 있거나 기본값이라 기본 무료 모델을 사용합니다.",
-        "env_model_caption": ".env에 설정된 모델명을 사용합니다.",
+        "default_model_caption": "모델명은 자동으로 설정됩니다. 사용자는 API Key만 입력하면 됩니다.",
         "test_openrouter": "OpenRouter 연결 테스트",
         "checking_openrouter": "OpenRouter 연결을 확인하는 중입니다...",
         "openrouter_success": "OpenRouter 연결 성공! AI 분석을 사용할 수 있습니다.",
-        "openrouter_fail": "OpenRouter 연결에 실패했습니다. API 키, 모델명, 인터넷 연결을 확인해주세요. 무료 모델이나 OpenRouter 라우팅 상태에 따라 처음 몇 번은 실패할 수 있으니 잠시 후 여러 번 다시 시도해보세요.",
+        "openrouter_fail": "OpenRouter 연결에 실패했습니다. API Key와 인터넷 연결을 확인해주세요. 무료 AI 서버 상태에 따라 처음 몇 번은 실패할 수 있으니 잠시 후 다시 시도해보세요.",
         "api_required_for_ai": "AI 분석을 완료하지 못했습니다. OpenRouter API 키를 .env 파일에 입력해주세요.",
         "result": "분석 결과",
         "ai_analysis": "AI 분석 내용",
@@ -219,20 +216,17 @@ TEXT = {
         "ollama_hint": "Install/run Ollama and pull the model first.",
         "ollama_pull_hint": "Example: run ollama pull qwen2.5:7b before using it.",
         "openrouter_status": "OpenRouter status",
-        "current_model": "Current AI model",
         "api_key_set": "API key is configured.",
         "api_key_invalid": "The saved API key is not in the OpenRouter format.",
         "api_key_missing": "No API key found. AI summary will be skipped and local analysis will be used.",
-        "api_settings": "API key / model settings",
-        "openrouter_model": "OpenRouter model",
+        "api_settings": "API key settings",
         "save_api_settings": "Save API settings",
         "api_key_hint": "OpenRouter API keys usually start with sk-or-v1-. Please check again.",
-        "default_model_caption": "OPENROUTER_MODEL is empty or default, so the default free model is used.",
-        "env_model_caption": "Using the model name set in .env.",
+        "default_model_caption": "The model is selected automatically. Users only need to enter an API key.",
         "test_openrouter": "Test OpenRouter connection",
         "checking_openrouter": "Checking OpenRouter connection...",
         "openrouter_success": "OpenRouter connected! AI analysis is available.",
-        "openrouter_fail": "OpenRouter connection failed. Check the API key, model name, and internet connection. Free models or OpenRouter routing can fail on the first few attempts, so wait a moment and try several times.",
+        "openrouter_fail": "OpenRouter connection failed. Check the API key and internet connection. Free AI servers can fail on the first few attempts, so wait a moment and try again.",
         "api_required_for_ai": "AI analysis could not be completed. Enter an OpenRouter API key in the .env file.",
         "result": "Analysis result",
         "ai_analysis": "AI analysis",
@@ -307,20 +301,17 @@ TEXT = {
         "ollama_hint": "请先安装/运行 Ollama 并下载模型。",
         "ollama_pull_hint": "例如：运行 ollama pull qwen2.5:7b 后再使用。",
         "openrouter_status": "OpenRouter 状态",
-        "current_model": "当前 AI 模型",
         "api_key_set": "API Key 已设置。",
         "api_key_invalid": "保存的 API Key 不是 OpenRouter 格式。",
         "api_key_missing": "没有 API Key，将跳过 AI 摘要并只使用本地分析。",
-        "api_settings": "API Key / 模型设置",
-        "openrouter_model": "OpenRouter 模型",
+        "api_settings": "API Key 设置",
         "save_api_settings": "保存 API 设置",
         "api_key_hint": "OpenRouter API Key 通常以 sk-or-v1- 开头。请重新确认。",
-        "default_model_caption": "OPENROUTER_MODEL 为空或为默认值，因此使用默认免费模型。",
-        "env_model_caption": "使用 .env 中设置的模型名称。",
+        "default_model_caption": "模型已自动设置，普通用户只需要输入 API Key。",
         "test_openrouter": "测试 OpenRouter 连接",
         "checking_openrouter": "正在检查 OpenRouter 连接...",
         "openrouter_success": "OpenRouter 连接成功！可以使用 AI 分析。",
-        "openrouter_fail": "OpenRouter 连接失败。请检查 API Key、模型名称和网络连接。免费模型或 OpenRouter 路由有时前几次会失败，请稍等后多试几次。",
+        "openrouter_fail": "OpenRouter 连接失败。请检查 API Key 和网络连接。免费 AI 服务器有时前几次会失败，请稍等后重试。",
         "api_required_for_ai": "AI 分析未能完成。请在 .env 文件中输入 OpenRouter API Key。",
         "result": "分析结果",
         "ai_analysis": "AI 分析内容",
@@ -388,8 +379,9 @@ def ensure_env_file() -> None:
         return
 
 
-def save_openrouter_settings(api_key: str, model_name: str, ui_language: str) -> bool:
+def save_openrouter_settings(api_key: str, ui_language: str) -> bool:
     normalized_key = normalize_openrouter_api_key(api_key)
+    model_name = get_current_model_info().get("model")
 
     try:
         ENV_FILE.write_text(
@@ -895,10 +887,7 @@ def show_ai_settings_sidebar(ui_language: str) -> tuple[str, str]:
 
     st.sidebar.header(t(ui_language, "openrouter_status"))
 
-    model_info = get_current_model_info()
-    model_name = safe_string(model_info.get("model"))
     current_key = get_openrouter_api_key()
-    st.sidebar.write(f"{t(ui_language, 'current_model')}: {model_name}")
 
     if current_key:
         if openrouter_key_looks_valid(current_key):
@@ -914,22 +903,15 @@ def show_ai_settings_sidebar(ui_language: str) -> tuple[str, str]:
             type="password",
             placeholder="sk-or-v1-...",
         )
-        model_input = st.text_input(
-            t(ui_language, "openrouter_model"),
-            value=model_name,
-        )
         if st.button(t(ui_language, "save_api_settings")):
             key_to_save = api_key_input.strip() or current_key
             if key_to_save and not openrouter_key_looks_valid(normalize_openrouter_api_key(key_to_save)):
                 st.sidebar.error(t(ui_language, "api_key_hint"))
                 return selected_provider, ""
-            if save_openrouter_settings(key_to_save, model_input, ui_language):
+            if save_openrouter_settings(key_to_save, ui_language):
                 st.sidebar.success(t(ui_language, "saved"))
 
-    if model_info.get("uses_default"):
-        st.sidebar.caption(t(ui_language, "default_model_caption"))
-    else:
-        st.sidebar.caption(t(ui_language, "env_model_caption"))
+    st.sidebar.caption(t(ui_language, "default_model_caption"))
 
     if st.sidebar.button(t(ui_language, "test_openrouter")):
         with st.sidebar.spinner(t(ui_language, "checking_openrouter")):
