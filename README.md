@@ -4,6 +4,58 @@
 
 API 키가 없어도 앱 실행, PDF 업로드, PDF 텍스트 추출, 출처 지식베이스 생성, 로컬 분석 기능은 사용할 수 있습니다. OpenRouter 기반 AI 분석과 연결 테스트를 사용하려면 `.env` 파일에 실제 API 키를 입력해야 합니다.
 
+## 免费模式和手动输入 API
+
+这个程序可以用两种方式运行。
+
+### 1. 免费模式，不需要 API Key
+
+如果没有 API Key，可以在网页左侧选择下面这个模式。
+
+```text
+로컬 분석만 사용 (API Key 없음)
+```
+
+免费模式可以使用这些功能。
+
+```text
+PDF 文本提取
+PDF 出处知识库生成
+自动搜索知识库
+手动搜索知识库
+Markdown / JSON 下载
+中文对照整理提示
+```
+
+这种模式不会调用在线 AI，所以不需要付费，也不需要输入 Key。
+
+### 2. 在网页内部手动输入 API Key
+
+如果要使用 OpenRouter 在线 AI，可以直接在网页左侧输入，不需要手动改代码。
+
+```text
+AI 模式选择：
+OpenRouter 온라인 AI 사용
+
+打开：
+API Key / 모델 설정
+
+输入：
+OpenRouter API Key
+OpenRouter 모델
+
+点击：
+API 설정 저장
+```
+
+可以使用的免费模型示例：
+
+```text
+qwen/qwen3-next-80b-a3b-instruct:free
+```
+
+如果老师或平台提供了其他模型名，也可以手动填入 `OpenRouter 모델` 输入框。
+
 ## 실행 방법
 
 최종 앱은 `multilingual_pdf_study_helper` 폴더 안에 있습니다.
@@ -41,6 +93,49 @@ OLLAMA_MODEL=qwen2.5:7b
 ```
 
 API 키가 없으면 `OPENROUTER_API_KEY=`처럼 비워두면 됩니다. 이 경우 OpenRouter 연결 테스트와 OpenRouter AI 분석은 실패 메시지를 보여주지만, 로컬 PDF 분석 기능은 계속 사용할 수 있습니다.
+
+## 网页内部 API 输入代码
+
+网页左侧 API 输入框代码在 `multilingual_pdf_study_helper/app.py` 的 `show_ai_settings_sidebar()` 函数中。
+
+```python
+with st.sidebar.expander("API Key / 모델 설정"):
+    api_key_input = st.text_input(
+        "OpenRouter API Key",
+        type="password",
+        placeholder="sk-or-...",
+    )
+    model_input = st.text_input(
+        "OpenRouter 모델",
+        value=model_name,
+    )
+    if st.button("API 설정 저장"):
+        key_to_save = api_key_input.strip() or current_key
+        if save_openrouter_settings(key_to_save, model_input):
+            st.sidebar.success("저장했습니다. 다시 분석을 실행해주세요.")
+```
+
+保存 API Key 的代码在 `save_openrouter_settings()` 函数中。它会把网页里输入的 Key 和模型名保存到本地 `.env` 文件。
+
+```python
+def save_openrouter_settings(api_key: str, model_name: str) -> bool:
+    normalized_key = normalize_openrouter_api_key(api_key)
+
+    ENV_FILE.write_text(
+        "\n".join(
+            [
+                f"OPENROUTER_API_KEY={normalized_key}",
+                f"OPENROUTER_MODEL={model_name}",
+                "OLLAMA_MODEL=qwen2.5:7b",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return True
+```
+
+也就是说，用户可以在网页内部手动输入 API Key，不需要打开 `.env` 文件。
 
 ## UI 언어
 
