@@ -219,6 +219,22 @@ def analyze_pdf(
     normalized_result["ai_provider"] = provider
     normalized_result["ai_provider_label"] = AI_PROVIDER_LABELS.get(provider, "Local analysis")
 
+    if normalized_result.get("error_code") == "openrouter_rate_limit":
+        rate_limit_message = safe_string(normalized_result.get("error"))
+        normalized_result = build_local_analysis_result(
+            pdf_text=pdf_text,
+            knowledge_results=knowledge_results,
+            target_language=target_language,
+            term_mode=term_mode,
+        )
+        normalized_result.update(local_context)
+        normalized_result["ai_provider"] = "local"
+        normalized_result["ai_provider_label"] = AI_PROVIDER_LABELS["local"]
+        normalized_result["warning"] = (
+            f"{rate_limit_message}\n\n"
+            "그래도 PDF 텍스트 추출과 지식베이스 검색은 완료되어 아래 로컬 분석 결과를 표시합니다."
+        )
+
     if provider in {"ollama", "openrouter"} and local_context["pdf_text_length"] > MAX_TEXT_LENGTH:
         truncation_warning = (
             f"PDF에서 추출된 텍스트가 {local_context['pdf_text_length']:,}자로 길어서 "

@@ -25,6 +25,11 @@ OLLAMA_TIMEOUT_SECONDS = 180
 AI_FAILURE_DETAILS = (
     "AI 분석을 완료하지 못했습니다. 선택한 AI 모드, 모델명, 연결 상태를 확인해주세요."
 )
+OPENROUTER_RATE_LIMIT_MESSAGE = (
+    "OpenRouter 무료 모델이 현재 사용량 제한(429)에 걸렸습니다. "
+    "잠시 후 다시 시도하거나, 다른 모델을 선택하거나, 본인 API Key를 사용해주세요. "
+    "中文：OpenRouter 免费模型当前触发了 429 速率限制。请稍后重试，或更换模型/输入自己的 API Key。"
+)
 LATEX_JSON_COMMAND_PATTERN = (
     r"(?:frac|sqrt|sum|int|lim|partial|cdot|times|omega|Omega|Phi|phi|theta|Theta|"
     r"lambda|Lambda|alpha|beta|gamma|Gamma|Delta|delta|sigma|Sigma|mu|pi|Pi|rho|"
@@ -483,9 +488,20 @@ def call_openrouter_ai(
             max_tokens=ANALYSIS_MAX_TOKENS,
         )
     except Exception as error:
+        if is_openrouter_rate_limit_error(error):
+            return normalize_result(
+                {
+                    "error": OPENROUTER_RATE_LIMIT_MESSAGE,
+                    "error_code": "openrouter_rate_limit",
+                    "details": (
+                        "PDF 텍스트 추출은 완료되었습니다. "
+                        "온라인 AI 요약만 잠시 제한되었으므로 로컬 분석 결과를 계속 확인할 수 있습니다."
+                    ),
+                }
+            )
         return normalize_result(
             {
-                "error": f"OpenRouter API 호출에 실패했습니다: {error}",
+                "error": make_user_safe_openrouter_error(error),
                 "details": AI_FAILURE_DETAILS,
             }
         )
@@ -667,7 +683,29 @@ def request_chat_completion(
             error_payload = response.json()
         except ValueError:
             error_payload = response.text
+        if response.status_code == 429:
+            raise RuntimeError("OPENROUTER_RATE_LIMIT")
         raise RuntimeError(f"오류 코드 {response.status_code}: {error_payload}")
 
     data = response.json()
     return safe_string(data["choices"][0]["message"]["content"])
+
+
+def is_openrouter_rate_limit_error(error: Exception) -> bool:
+    error_text = safe_string(error)
+    return "OPENROUTER_RATE_LIMIT" in error_text or "오류 코드 429" in error_text
+
+
+def make_user_safe_openrouter_error(error: Exception) -> str:
+    if is_openrouter_rate_limit_error(error):
+        return OPENROUTER_RATE_LIMIT_MESSAGE
+
+    error_text = safe_string(error)
+    if "오류 코드 401" in error_text or "401" in error_text:
+        return "OpenRouter API Key 인증에 실패했습니다. API Key가 올바른지 확인해주세요."
+    if "오류 코드 402" in error_text or "402" in error_text:
+        return "OpenRouter 계정의 결제/크레딧 상태를 확인해주세요."
+    if "오류 코드 404" in error_text or "404" in error_text:
+        return "OpenRouter 모델명을 찾을 수 없습니다. 모델명을 다시 확인해주세요."
+
+    return "OpenRouter API 호출에 실패했습니다. API Key, 모델명, 인터넷 연결을 확인해주세요."
